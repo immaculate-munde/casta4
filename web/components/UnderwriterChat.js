@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import ChatMarkdown from '@/components/ChatMarkdown';
 import { askClaims } from '@/lib/api';
 
 const DEFAULT_INTRO =
@@ -104,7 +105,11 @@ export default function UnderwriterChat({
                   : 'border border-kenya-line bg-white text-[#1c2430]'
               } ${!compact && msg.role === 'bot' ? 'rounded-lg' : ''}`}
             >
-              {msg.text}
+              {msg.role === 'bot' && i > 0 && !msg.isError ? (
+                <ChatMarkdown text={msg.text} />
+              ) : (
+                msg.text
+              )}
             </div>
             {msg.role === 'bot' && i > 0 && !msg.isError ? (
               <div className={`w-full ${compact ? 'max-w-[95%] pl-0.5' : 'max-w-[92%]'}`}>
