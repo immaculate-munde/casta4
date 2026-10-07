@@ -1,6 +1,6 @@
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
-import { ROLE_IDS, homeForRole } from '@/lib/auth-roles';
+import { DEFAULT_HOME, isSignedIn } from '@/lib/auth-roles';
 
 const COOKIE = 'casta4_session';
 const MAX_AGE = 60 * 60 * 24 * 7;
@@ -22,11 +22,11 @@ export async function GET() {
   const raw = jar.get(COOKIE)?.value;
   if (!raw) return NextResponse.json({ session: null });
   const session = decodeSession(raw);
-  if (!session?.role || !ROLE_IDS.includes(session.role)) {
+  if (!isSignedIn(session)) {
     return NextResponse.json({ session: null });
   }
   return NextResponse.json({
-    session: { email: session.email, name: session.name, role: session.role },
+    session: { email: session.email, name: session.name },
   });
 }
 
@@ -40,16 +40,12 @@ export async function POST(request) {
 
   const email = String(body.email || '').trim().toLowerCase();
   const name = String(body.name || '').trim() || email.split('@')[0] || 'User';
-  const role = String(body.role || '').trim();
 
   if (!email || !email.includes('@')) {
     return NextResponse.json({ error: 'Valid email required' }, { status: 400 });
   }
-  if (!ROLE_IDS.includes(role)) {
-    return NextResponse.json({ error: 'Invalid role' }, { status: 400 });
-  }
 
-  const session = { email, name, role, signedInAt: Date.now() };
+  const session = { email, name, signedInAt: Date.now() };
   const jar = await cookies();
   jar.set(COOKIE, encodeSession(session), {
     httpOnly: true,
@@ -61,8 +57,8 @@ export async function POST(request) {
 
   return NextResponse.json({
     ok: true,
-    redirect: homeForRole(role),
-    session: { email, name, role },
+    redirect: DEFAULT_HOME,
+    session: { email, name },
   });
 }
 
