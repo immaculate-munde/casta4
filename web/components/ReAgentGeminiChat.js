@@ -1,11 +1,13 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ChatMarkdown from '@/components/ChatMarkdown';
 import ThemeToggle from '@/components/ThemeToggle';
 import { useChatDrawer } from '@/components/ChatDrawerProvider';
 import { askClaims } from '@/lib/api';
+import { pickChatGreeting } from '@/lib/chat-greetings';
 import { enrichQuestionWithProperty } from '@/lib/property-context';
+import { useUserSession } from '@/lib/use-user-session';
 
 const STORAGE_KEY = 'reagent_chat_sessions_v1';
 
@@ -26,6 +28,7 @@ function saveSessions(sessions) {
 function newSession() {
   return {
     id: crypto.randomUUID(),
+    greetingSeed: crypto.randomUUID(),
     title: 'New chat',
     updatedAt: Date.now(),
     messages: [],
@@ -56,6 +59,7 @@ function SourcePills({ sources }) {
 
 export default function ReAgentGeminiChat({ onClose, fullscreen, onToggleFullscreen }) {
   const { propertyContext } = useChatDrawer();
+  const { user } = useUserSession();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [sessions, setSessions] = useState([]);
   const [activeId, setActiveId] = useState(null);
@@ -136,6 +140,16 @@ export default function ReAgentGeminiChat({ onClose, fullscreen, onToggleFullscr
   }
 
   const hasThread = (active?.messages?.length || 0) > 0;
+
+  const emptyGreeting = useMemo(
+    () =>
+      pickChatGreeting({
+        name: user?.name,
+        email: user?.email,
+        seed: active?.greetingSeed || active?.id || 'new',
+      }),
+    [user?.name, user?.email, active?.greetingSeed, active?.id]
+  );
 
   return (
     <div
@@ -259,10 +273,10 @@ export default function ReAgentGeminiChat({ onClose, fullscreen, onToggleFullscr
 
           {!hasThread ? (
             <h1
-              className="relative z-[1] max-w-lg px-6 text-center text-3xl font-normal tracking-tight md:text-4xl"
+              className="relative z-[1] max-w-xl px-6 text-center text-3xl font-normal tracking-tight md:text-4xl"
               style={{ color: 'var(--chat-text)' }}
             >
-              What would you like to know?
+              {emptyGreeting}
             </h1>
           ) : (
             <div className="mx-auto w-full max-w-3xl space-y-6">
