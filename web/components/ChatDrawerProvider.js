@@ -14,6 +14,7 @@ export function useChatDrawer() {
 export default function ChatDrawerProvider({ children }) {
   const [open, setOpen] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
+  const [propertyContext, setPropertyContext] = useState(null);
 
   const openChat = useCallback(() => setOpen(true), []);
   const closeChat = useCallback(() => {
@@ -23,7 +24,18 @@ export default function ChatDrawerProvider({ children }) {
   const toggleFullscreen = useCallback(() => setFullscreen((v) => !v), []);
 
   return (
-    <ChatDrawerContext.Provider value={{ open, openChat, closeChat, setOpen, fullscreen, toggleFullscreen }}>
+    <ChatDrawerContext.Provider
+      value={{
+        open,
+        openChat,
+        closeChat,
+        setOpen,
+        fullscreen,
+        toggleFullscreen,
+        propertyContext,
+        setPropertyContext,
+      }}
+    >
       {children}
 
       {open ? (
@@ -37,10 +49,10 @@ export default function ChatDrawerProvider({ children }) {
             />
           ) : null}
           <aside
-            className={`absolute flex flex-col overflow-hidden shadow-2xl ${
+            className={`absolute flex min-h-0 flex-col overflow-hidden bg-[var(--chat-bg)] shadow-2xl ${
               fullscreen
                 ? 'inset-0'
-                : 'right-0 top-0 h-full w-full max-w-3xl rounded-l-xl border-l border-[#3c4043]'
+                : 'right-0 top-0 h-full w-full max-w-3xl rounded-l-xl border-l border-[#3c4043] dark:border-[#5f6368]'
             }`}
           >
             <ReAgentGeminiChat
