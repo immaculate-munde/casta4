@@ -1,8 +1,11 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import ChatMarkdown from '@/components/ChatMarkdown';
 import ThemeToggle from '@/components/ThemeToggle';
+import { useChatDrawer } from '@/components/ChatDrawerProvider';
 import { askClaims } from '@/lib/api';
+import { enrichQuestionWithProperty } from '@/lib/property-context';
 
 const STORAGE_KEY = 'reagent_chat_sessions_v1';
 
@@ -52,6 +55,7 @@ function SourcePills({ sources }) {
 }
 
 export default function ReAgentGeminiChat({ onClose, fullscreen, onToggleFullscreen }) {
+  const { propertyContext } = useChatDrawer();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [sessions, setSessions] = useState([]);
   const [activeId, setActiveId] = useState(null);
@@ -110,7 +114,8 @@ export default function ReAgentGeminiChat({ onClose, fullscreen, onToggleFullscr
 
     setLoading(true);
     try {
-      const { answer, sources } = await askClaims(text);
+      const question = enrichQuestionWithProperty(text, propertyContext);
+      const { answer, sources } = await askClaims(question);
       updateSession(active.id, (s) => ({
         messages: [...s.messages, { role: 'bot', text: answer, sources }],
       }));
@@ -193,32 +198,49 @@ export default function ReAgentGeminiChat({ onClose, fullscreen, onToggleFullscr
         </p>
       </aside>
 
-      <div className="relative flex min-w-0 flex-1 flex-col">
-        <header className="absolute left-0 right-0 top-0 z-10 flex items-center justify-between px-3 py-2">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+        <header
+          className="z-20 flex shrink-0 items-center gap-2 border-b px-2 py-2 sm:px-3"
+          style={{
+            borderColor: 'var(--chat-border)',
+            background: 'var(--chat-panel)',
+          }}
+        >
           <button
             type="button"
             onClick={() => setSidebarOpen((v) => !v)}
-            className="rounded-full p-2 hover:opacity-80"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg hover:opacity-80"
             style={{ color: 'var(--chat-text)' }}
             aria-label={sidebarOpen ? 'Close sidebar' : 'Open sidebar'}
           >
             ☰
           </button>
-          <div className="flex items-center gap-2">
-            <ThemeToggle />
+          <p
+            className="min-w-0 flex-1 truncate text-sm font-semibold sm:text-base"
+            style={{ color: 'var(--chat-text)' }}
+          >
+            {active?.title || 'ReAgent'}
+          </p>
+          <div
+            className="flex shrink-0 items-center gap-1 rounded-lg border p-0.5 sm:gap-1.5 sm:p-1"
+            style={{ borderColor: 'var(--chat-border)', background: 'var(--chat-bg)' }}
+          >
+            <ThemeToggle className="!border-0 !bg-transparent !px-2 !py-1.5 dark:!bg-transparent" />
             <button
               type="button"
               onClick={onToggleFullscreen}
-              className="rounded-full px-3 py-2 text-sm font-medium hover:opacity-80"
+              className="flex h-8 w-8 items-center justify-center rounded-md text-sm font-medium hover:opacity-80 sm:h-9 sm:w-auto sm:px-2"
               style={{ color: 'var(--chat-text)' }}
               aria-label={fullscreen ? 'Exit full screen' : 'Full screen'}
+              title={fullscreen ? 'Exit full screen' : 'Full screen'}
             >
-              {fullscreen ? '⊡' : '⛶'}
+              <span className="sm:hidden">{fullscreen ? '⊡' : '⛶'}</span>
+              <span className="hidden sm:inline">{fullscreen ? 'Exit full' : 'Full screen'}</span>
             </button>
             <button
               type="button"
               onClick={onClose}
-              className="rounded-full px-3 py-2 text-sm font-medium hover:opacity-80"
+              className="flex h-8 items-center justify-center rounded-md px-2 text-sm font-semibold hover:opacity-80 sm:h-9 sm:px-3"
               style={{ color: 'var(--chat-text)' }}
             >
               Close
@@ -227,8 +249,8 @@ export default function ReAgentGeminiChat({ onClose, fullscreen, onToggleFullscr
         </header>
 
         <div
-          className={`flex min-h-0 flex-1 flex-col pt-12 ${
-            hasThread ? 'overflow-y-auto px-4 pb-32' : 'items-center justify-center overflow-hidden'
+          className={`relative min-h-0 flex-1 ${
+            hasThread ? 'overflow-y-auto overscroll-contain px-3 py-4 sm:px-4' : 'flex items-center justify-center overflow-hidden'
           }`}
         >
           {!hasThread ? (
@@ -243,19 +265,19 @@ export default function ReAgentGeminiChat({ onClose, fullscreen, onToggleFullscr
               What would you like to know?
             </h1>
           ) : (
-            <div className="mx-auto w-full max-w-3xl space-y-6 py-4">
+            <div className="mx-auto w-full max-w-3xl space-y-6">
               {(active?.messages || []).map((msg, i) => (
                 <div key={i} className={msg.role === 'user' ? 'text-right' : ''}>
                   {msg.role === 'user' ? (
                     <p
-                      className="ml-auto inline-block max-w-[85%] rounded-2xl px-4 py-2 text-left text-sm"
+                      className="ml-auto inline-block max-w-[85%] rounded-2xl px-4 py-2 text-left text-sm whitespace-pre-wrap"
                       style={{ background: 'var(--chat-user-bubble)', color: 'var(--chat-text)' }}
                     >
                       {msg.text}
                     </p>
                   ) : (
-                    <div className="max-w-[95%] text-sm leading-relaxed" style={{ color: 'var(--chat-text)' }}>
-                      <p className="whitespace-pre-wrap">{msg.text}</p>
+                    <div className="max-w-[95%] text-sm" style={{ color: 'var(--chat-text)' }}>
+                      <ChatMarkdown text={msg.text} />
                       <SourcePills sources={msg.sources} />
                     </div>
                   )}
@@ -266,18 +288,35 @@ export default function ReAgentGeminiChat({ onClose, fullscreen, onToggleFullscr
                   Searching documents…
                 </p>
               ) : null}
-              <div ref={endRef} />
+              <div ref={endRef} aria-hidden />
             </div>
           )}
         </div>
 
         <form
           onSubmit={onSubmit}
-          className="absolute bottom-0 left-0 right-0 z-10 px-4 pb-6 pt-8"
+          className="shrink-0 border-t px-3 pb-4 pt-3 sm:px-4 sm:pb-5"
           style={{
-            background: `linear-gradient(to top, var(--chat-bg), var(--chat-bg), transparent)`,
+            borderColor: 'var(--chat-border)',
+            background: 'var(--chat-bg)',
           }}
         >
+          {propertyContext?.loc_id ? (
+            <p
+              className="mx-auto mb-2 max-w-3xl rounded-md border px-3 py-2 text-[11px] font-medium"
+              style={{
+                borderColor: 'var(--chat-border)',
+                background: 'var(--chat-panel)',
+                color: 'var(--chat-text-muted)',
+              }}
+            >
+              Map context: <strong style={{ color: 'var(--chat-text)' }}>{propertyContext.loc_id}</strong>
+              {' · '}
+              {propertyContext.cedant_name}
+              {' · '}
+              {propertyContext.kenya_re_in_book ? 'Kenya Re book' : 'Not in treaty book'}
+            </p>
+          ) : null}
           <div
             className="mx-auto flex max-w-3xl items-end gap-2 rounded-3xl border-2 px-4 py-3 shadow-lg focus-within:ring-2 focus-within:ring-kenya-blue/40"
             style={{ borderColor: 'var(--chat-border)', background: 'var(--chat-panel)' }}
