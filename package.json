@@ -45,5 +45,13 @@
   },
   "engines": {
     "node": "24.x"
+  },
+  "allowScripts": {
+    "hnswlib-node@3.0.0": true,
+    "better-sqlite3@11.10.0": true,
+    "onnxruntime-node@1.14.0": true,
+    "onnxruntime-node@1.21.0": true,
+    "sharp@0.32.6": true,
+    "sharp@0.34.4": true
   }
 }

@@ -43,6 +43,21 @@ Then open http://localhost:3000 in your browser.
 node rag-server.js
 ```
 
+### Nairobi flood catastrophe desk (Team A)
+
+**Data:** CSVs live in `data/team_a_nairobi/` (commit and push them with the repo — they are not gitignored).
+
+**API:** `node rag-server.js` (port **3001**) — `/api/nairobi/meta`, `/summary`, `/hotspots`, `/exposure`, `/exposure/:locId`, `/loss-curve`.
+
+**Next.js frontend (recommended):**
+```sh
+cd web
+cp .env.example .env.local   # set NEXT_PUBLIC_RAG_API_URL=http://localhost:3001
+npm install
+npm run dev
+```
+Open **http://localhost:3000/catastrophe** (flood desk) or **/chat** (claims). Legacy static UI remains in `public/`.
+
 ### Deploying Netlify Functions
 - Functions are in `netlify/functions/` and auto-deployed by Netlify.
 - Set environment variables in Netlify dashboard for API keys and URLs.

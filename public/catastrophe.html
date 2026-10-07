@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="cat-api-base" content="http://localhost:3001">
+  <title>Kenya Re — Nairobi flood catastrophe desk</title>
+  <link rel="icon" type="image/svg+xml" href="LinoBulb.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" crossorigin="anonymous" referrerpolicy="no-referrer">
+  <link rel="stylesheet" href="catastrophe.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="mark" href="index.html">
+      <span class="mark-ribbon" aria-hidden="true"></span>
+      <span class="mark-name">Kenya Re</span>
+      <span class="mark-desk">Nairobi flood desk</span>
+    </a>
+    <p class="topbar-book" id="book-summary">Loading portfolio…</p>
+    <span class="synthetic-badge" id="synthetic-badge">Synthetic data</span>
+    <a class="text-link" href="index.html">Claims chat</a>
+  </header>
+
+  <div class="desk">
+    <aside class="register" aria-label="Flood portfolio">
+      <div class="register-head">
+        <h1>Flood book</h1>
+        <p id="register-subtitle">600 illustrative Nairobi locations · pluvial susceptibility proxy</p>
+        <label class="tier-label" for="tier-select">Hazard scenario</label>
+        <select id="tier-select" aria-label="Hazard severity tier"></select>
+      </div>
+      <div class="register-list" id="register-list"></div>
+    </aside>
+
+    <main class="map-wrap">
+      <div id="map" role="application" aria-label="Nairobi flood exposure map"></div>
+      <div class="legend">
+        <span><i class="swatch swatch-high"></i> High (≥50% score)</span>
+        <span><i class="swatch swatch-watch"></i> Watch (25–50%)</span>
+        <span><i class="swatch swatch-low"></i> Lower (&lt;25%)</span>
+        <span><i class="swatch swatch-hotspot"></i> Named hotspot</span>
+      </div>
+      <section class="ep-panel" aria-label="Return period loss curve">
+        <h3>Exceedance curve</h3>
+        <p class="ep-note" id="ep-note">Portfolio ground-up loss by assumed return period</p>
+        <div class="ep-chart" id="ep-chart" role="img" aria-label="Loss exceedance chart"></div>
+        <dl class="ep-key" id="ep-key"></dl>
+      </section>
+    </main>
+
+    <aside class="case" aria-label="Property file and underwriter">
+      <section class="dossier" id="dossier" aria-live="polite"></section>
+      <section class="copilot" aria-label="Underwriter chat">
+        <header class="copilot-head">
+          <h2>Underwriter</h2>
+          <p id="copilot-context">No property open.</p>
+        </header>
+        <div class="thread" id="thread"></div>
+        <form class="composer" id="composer">
+          <label class="sr-only" for="ask">Ask about the open property</label>
+          <textarea id="ask" rows="2" placeholder="Ask about hazard scores, TIV, or modelled loss"></textarea>
+          <button type="submit">Ask</button>
+        </form>
+      </section>
+    </aside>
+  </div>
+
+  <p class="load-error" id="load-error" hidden></p>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="catastrophe.js"></script>
+</body>
+</html>
