@@ -1,0 +1,126 @@
+'use client';
+
+import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useState } from 'react';
+import { ROLES, ROLE_IDS } from '@/lib/auth-roles';
+import ThemeToggle from '@/components/ThemeToggle';
+
+export default function SignInForm() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const nextPath = searchParams.get('next') || '';
+
+  const [email, setEmail] = useState('');
+  const [name, setName] = useState('');
+  const [role, setRole] = useState('underwriter');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  async function onSubmit(e) {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+    try {
+      const res = await fetch('/api/auth/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, name, role }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Sign-in failed');
+
+      const dest =
+        nextPath && nextPath.startsWith('/') && !nextPath.startsWith('//') ? nextPath : data.redirect;
+      router.push(dest);
+      router.refresh();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="min-h-screen bg-kenya-surface">
+      <header className="flex items-center justify-between border-b border-kenya-line bg-kenya-panel px-6 py-4">
+        <Link href="/" className="font-semibold text-kenya-blue hover:underline">
+          ← Back to home
+        </Link>
+        <ThemeToggle />
+      </header>
+
+      <main className="mx-auto max-w-lg px-6 py-10">
+        <h1 className="font-serif text-3xl font-semibold text-kenya-navy">Sign in</h1>
+        <p className="mt-2 text-sm font-medium text-kenya-muted">
+          Demo workspace auth — pick a role. Production can replace this route with your IdP or API token exchange.
+        </p>
+
+        <form onSubmit={onSubmit} className="mt-8 space-y-5 rounded-sm border-2 border-kenya-line bg-kenya-panel p-6 shadow-md">
+          <label className="block text-sm">
+            <span className="font-semibold text-kenya-navy">Work email</span>
+            <input
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@kenyare.co.ke"
+              className="mt-1 w-full rounded-md border-2 border-kenya-line bg-kenya-panel px-3 py-2 text-kenya-ink outline-none focus:border-kenya-blue focus:ring-2 focus:ring-kenya-blue/30"
+            />
+          </label>
+
+          <label className="block text-sm">
+            <span className="font-semibold text-kenya-navy">Display name (optional)</span>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Jane Underwriter"
+              className="mt-1 w-full rounded-md border-2 border-kenya-line bg-kenya-panel px-3 py-2 text-kenya-ink outline-none focus:border-kenya-blue focus:ring-2 focus:ring-kenya-blue/30"
+            />
+          </label>
+
+          <fieldset>
+            <legend className="text-sm font-semibold text-kenya-navy">Role</legend>
+            <div className="mt-2 space-y-2">
+              {ROLE_IDS.map((id) => {
+                const r = ROLES[id];
+                return (
+                  <label
+                    key={id}
+                    className={`flex cursor-pointer gap-3 rounded-md border px-3 py-3 text-sm transition ${
+                      role === id ? 'border-kenya-blue bg-[#e8eef8]' : 'border-kenya-line hover:border-kenya-muted'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="role"
+                      value={id}
+                      checked={role === id}
+                      onChange={() => setRole(id)}
+                      className="mt-1"
+                    />
+                    <span>
+                      <span className="block font-semibold text-kenya-navy">{r.label}</span>
+                      <span className="text-kenya-muted">{r.description}</span>
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+          </fieldset>
+
+          {error ? <p className="text-sm text-kenya-coral">{error}</p> : null}
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full rounded-md bg-kenya-coral py-3.5 text-sm font-bold text-white shadow-md ring-2 ring-kenya-coral/30 transition hover:bg-[#a82828] disabled:cursor-not-allowed disabled:opacity-55 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-kenya-blue"
+          >
+            {loading ? 'Signing in…' : 'Sign in'}
+          </button>
+        </form>
+      </main>
+    </div>
+  );
+}
