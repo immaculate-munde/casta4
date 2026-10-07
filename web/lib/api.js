@@ -30,5 +30,8 @@ export async function askClaims(question, context = []) {
     throw new Error(err.error || `HTTP ${res.status}`);
   }
   const data = await res.json();
-  return data.answer || 'No answer returned.';
+  return {
+    answer: data.answer || 'No answer returned.',
+    sources: Array.isArray(data.sources) ? data.sources : [],
+  };
 }
