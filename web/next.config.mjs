@@ -16,6 +16,14 @@ const nextConfig = {
         destination: `${ragServer}/api/nairobi/:path*`,
       },
       {
+        source: '/api/claims/:path*',
+        destination: `${ragServer}/api/claims/:path*`,
+      },
+      {
+        source: '/api/dashboard',
+        destination: `${ragServer}/api/dashboard`,
+      },
+      {
         source: '/api/rag/:path*',
         destination: `${ragServer}/:path*`,
       },

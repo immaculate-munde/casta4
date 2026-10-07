@@ -6,10 +6,12 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import { HNSWLib } from '@langchain/community/vectorstores/hnswlib';
 import { HuggingFaceTransformersEmbeddings } from '@langchain/community/embeddings/huggingface_transformers';
+import fs from 'fs/promises';
+import { parse } from 'csv-parse/sync';
 
 import { cleanLlmAnswer } from './lib/clean-llm-answer.js';
 import nairobiRouter from './lib/nairobi-routes.js';
-import { loadPortfolio } from './lib/nairobi-flood-cat.js';
+import { loadPortfolio, computePortfolioSummary, computeLossCurve } from './lib/nairobi-flood-cat.js';
 
 const app = express();
 app.set('trust proxy', 1);
@@ -200,6 +202,159 @@ app.get('/health', (req, res) =>
     mode: 'rag',
   })
 );
+
+// ── Claims summary (from historical CSV) ─────────────────────────────────────
+app.get('/api/claims/summary', async (_req, res) => {
+  try {
+    const raw = await fs.readFile('docs/05_historical_claims.csv', 'utf8');
+    const records = parse(raw, { columns: true, skip_empty_lines: true });
+
+    const total = records.length;
+    const settled = records.filter(r => r.status === 'Settled').length;
+    const open = records.filter(r => r.status === 'Open').length;
+    const underReview = records.filter(r => r.status === 'Under Review').length;
+
+    const totalClaimed = records.reduce((s, r) => {
+      const n = Number(String(r.claimed_amount_kes).replace(/[^0-9.]/g, ''));
+      return s + (Number.isFinite(n) ? n : 0);
+    }, 0);
+
+    const totalSettled = records.reduce((s, r) => {
+      const n = Number(String(r.settled_amount_kes).replace(/[^0-9.]/g, ''));
+      return s + (Number.isFinite(n) ? n : 0);
+    }, 0);
+
+    // Current claim HC-030
+    const current = records.find(r => r.claim_id === 'HC-030');
+
+    // Anomaly flags: no sprinkler + previous claims > 0 + unconfirmed cause
+    const flagged = records.filter(r =>
+      r.sprinkler_present === 'No' &&
+      Number(r.previous_claims_count) > 0
+    ).length;
+
+    // By peril breakdown
+    const byPeril = {};
+    for (const r of records) {
+      const p = r.peril || 'Unknown';
+      byPeril[p] = (byPeril[p] || 0) + 1;
+    }
+
+    // Recent claims (last 5)
+    const recent = records.slice(-5).reverse().map(r => ({
+      claim_id: r.claim_id,
+      insured: r.insured,
+      peril: r.peril,
+      status: r.status,
+      claimed_amount_kes: Number(String(r.claimed_amount_kes).replace(/[^0-9.]/g, '')) || 0,
+      days_to_notify: Number(r.days_to_notify) || 0,
+    }));
+
+    res.json({
+      total_claims: total,
+      settled,
+      open,
+      under_review: underReview,
+      total_claimed_kes: totalClaimed,
+      total_settled_kes: totalSettled,
+      flagged_for_review: flagged,
+      by_peril: byPeril,
+      current_claim: current ? {
+        claim_id: current.claim_id,
+        insured: current.insured,
+        status: current.status,
+        claimed_amount_kes: Number(String(current.claimed_amount_kes).replace(/[^0-9.]/g, '')) || 0,
+        peril: current.peril,
+        cause_confirmed: current.cause_confirmed,
+      } : null,
+      recent_claims: recent,
+    });
+  } catch (err) {
+    console.error('Claims summary error:', err);
+    res.status(500).json({ error: 'Failed to load claims summary' });
+  }
+});
+
+// ── Combined dashboard endpoint ───────────────────────────────────────────────
+app.get('/api/dashboard', async (_req, res) => {
+  try {
+    // Load claims CSV directly (no internal HTTP call)
+    const raw = await fs.readFile('docs/05_historical_claims.csv', 'utf8');
+    const records = parse(raw, { columns: true, skip_empty_lines: true });
+
+    const total = records.length;
+    const settled = records.filter(r => r.status === 'Settled').length;
+    const open = records.filter(r => r.status === 'Open').length;
+    const underReview = records.filter(r => r.status === 'Under Review').length;
+
+    const toNum = v => { const n = Number(String(v).replace(/[^0-9.]/g, '')); return Number.isFinite(n) ? n : 0; };
+
+    const totalClaimed = records.reduce((s, r) => s + toNum(r.claimed_amount_kes), 0);
+    const totalSettled = records.reduce((s, r) => s + toNum(r.settled_amount_kes), 0);
+
+    const flagged = records.filter(r => r.sprinkler_present === 'No' && Number(r.previous_claims_count) > 0).length;
+
+    const current = records.find(r => r.claim_id === 'HC-030');
+
+    const recent = records.slice(-5).reverse().map(r => ({
+      claim_id: r.claim_id,
+      insured: r.insured,
+      peril: r.peril,
+      status: r.status,
+      claimed_amount_kes: toNum(r.claimed_amount_kes),
+    }));
+
+    // Load flood portfolio
+    const { exposure } = await loadPortfolio();
+    const summary = computePortfolioSummary(exposure);
+    const lossCurve = computeLossCurve(exposure);
+    const moderateLoss = lossCurve.points.find(p => p.tier === 'moderate');
+    const severeLoss = lossCurve.points.find(p => p.tier === 'severe');
+
+    const { enrichRow } = await import('./lib/nairobi-flood-cat.js');
+    const topRisk = exposure
+      .map(row => enrichRow(row, 'moderate'))
+      .sort((a, b) => b.hazard - a.hazard)
+      .slice(0, 3)
+      .map(r => ({
+        loc_id: r.loc_id,
+        housing_label: r.housing_label,
+        hazard: r.hazard,
+        loss_kes: r.loss_kes,
+        tiv_kes: r.tiv_kes,
+      }));
+
+    res.json({
+      claims: {
+        total_claims: total,
+        settled, open, under_review: underReview,
+        total_claimed_kes: totalClaimed,
+        total_settled_kes: totalSettled,
+        flagged_for_review: flagged,
+        current_claim: current ? {
+          claim_id: current.claim_id,
+          insured: current.insured,
+          status: current.status,
+          claimed_amount_kes: toNum(current.claimed_amount_kes),
+          peril: current.peril,
+          cause_confirmed: current.cause_confirmed,
+        } : null,
+        recent_claims: recent,
+      },
+      flood: {
+        location_count: summary.location_count,
+        total_tiv_kes: summary.total_tiv_kes,
+        moderate_loss_kes: moderateLoss?.portfolio_loss_kes || 0,
+        severe_loss_kes: severeLoss?.portfolio_loss_kes || 0,
+        top_risk_locations: topRisk,
+        by_housing: summary.by_housing,
+      },
+    });
+  } catch (err) {
+    console.error('Dashboard error:', err);
+    res.status(500).json({ error: 'Failed to load dashboard data', details: err.message });
+  }
+});
 
 Promise.all([loadPortfolio(), loadRAG()])
   .then(() => {
