@@ -78,8 +78,9 @@ Open **http://localhost:3000** (landing) → **Sign in** → role-based workspac
 - Restrict CORS in production.
 - Add authentication for sensitive endpoints if needed.
 
-## Author
+## Authors
+Immaculate Munde
 Ireri Linus Mugendi
-
+Washington Adiado
 ---
 For more details, see the `DEPLOYMENT-GUIDE.md` or contact immaculatemunde@gmail.com.

@@ -356,8 +356,8 @@ app.get('/api/dashboard', async (_req, res) => {
 
 Promise.all([loadPortfolio(), loadRAG()])
   .then(() => {
-    app.listen(PORT, () => {
-      console.log(`RAG server listening on port ${PORT}`);
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`RAG server listening on 0.0.0.0:${PORT}`);
       console.log(`  POST /rag  — ask.js and CLI (pure RAG)`);
       console.log(`  POST /ask  — Netlify / web alias`);
       console.log(`  GET  /health`);
