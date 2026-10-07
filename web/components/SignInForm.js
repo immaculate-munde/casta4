@@ -51,7 +51,7 @@ export default function SignInForm() {
       <main className="mx-auto max-w-lg px-6 py-10">
         <h1 className="font-serif text-3xl font-semibold text-kenya-navy">Sign in</h1>
         <p className="mt-2 text-sm font-medium text-kenya-muted">
-          Demo workspace sign-in. Everyone uses the same operations dashboard and flood desk. Production can replace
+          Demo workspace sign-in. You land on the flood desk first; the operations dashboard is in the nav. Production can replace
           this with your IdP or API token exchange.
         </p>
 
