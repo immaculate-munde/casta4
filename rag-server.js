@@ -9,6 +9,8 @@ import { HuggingFaceTransformersEmbeddings } from "@langchain/community/embeddin
 
 import { cleanLlmAnswer } from './lib/clean-llm-answer.js';
 import { runAgent } from './lib/agent.js';
+import nairobiRouter from './lib/nairobi-routes.js';
+import { loadPortfolio } from './lib/nairobi-flood-cat.js';
 
 const app = express();
 app.set('trust proxy', 1); // Trust first proxy (ngrok)
@@ -30,6 +32,8 @@ const limiter = rateLimit({
   legacyHeaders: false,
 });
 app.use(limiter);
+
+app.use('/api/nairobi', nairobiRouter);
 
 let vectorStore, embeddings;
 
@@ -188,11 +192,13 @@ app.post('/agent', async (req, res) => {
 
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
-loadRAG().then(() => {
-  app.listen(PORT, () => {
-    console.log(`RAG server listening on port ${PORT}`);
+Promise.all([loadPortfolio(), loadRAG()])
+  .then(() => {
+    app.listen(PORT, () => {
+      console.log(`RAG server listening on port ${PORT} (Nairobi CAT API at /api/nairobi/*)`);
+    });
+  })
+  .catch((err) => {
+    console.error('Failed to start server:', err);
+    process.exit(1);
   });
-}).catch(err => {
-  console.error('Failed to load RAG:', err);
-  process.exit(1);
-});
