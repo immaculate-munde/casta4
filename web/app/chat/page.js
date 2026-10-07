@@ -1,5 +1,18 @@
-import ClaimsChat from '@/components/ClaimsChat';
+'use client';
 
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useChatDrawer } from '@/components/ChatDrawerProvider';
+
+/** Legacy route — opens the global chat drawer and returns to landing. */
 export default function ChatPage() {
-  return <ClaimsChat />;
+  const router = useRouter();
+  const { openChat } = useChatDrawer();
+
+  useEffect(() => {
+    openChat();
+    router.replace('/');
+  }, [openChat, router]);
+
+  return null;
 }
