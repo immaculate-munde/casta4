@@ -88,3 +88,17 @@ select:focus-visible {
   outline: 2px solid var(--app-blue);
   outline-offset: 2px;
 }
+
+/* MapLibre (flood desk) */
+.maplibregl-popup-content {
+  font-family: var(--font-sans, 'Public Sans', sans-serif);
+  font-size: 12px;
+  padding: 8px 10px;
+  border-radius: 0;
+  box-shadow: 0 2px 8px rgba(23, 56, 106, 0.18);
+  border: 1px solid var(--app-line);
+  line-height: 1.5;
+}
+.maplibregl-popup-tip { display: none; }
+.maplibregl-ctrl-attrib { font-size: 10px; }
+.maplibregl-ctrl-group { border-radius: 0 !important; }
