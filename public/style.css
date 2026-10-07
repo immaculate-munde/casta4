@@ -186,6 +186,24 @@ header {
   text-shadow: 0 0 15px rgba(248, 112, 96, 0.8); /* Slightly stronger glow on hover */
 }
 
+.desk-link {
+  margin-left: auto;
+  flex-shrink: 0;
+  background: #2457a6;
+  color: #fff;
+  text-decoration: none;
+  font-size: 0.82rem;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+  padding: 0.45rem 0.75rem;
+  border-radius: 2px;
+  white-space: nowrap;
+}
+
+.desk-link:hover {
+  background: #1d4684;
+}
+
 .sidebar-toggle {
   display: none;
   background: rgba(248, 112, 96, 0.12);
