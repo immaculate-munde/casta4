@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { canAccessPath } from './lib/auth-roles';
+import { isSignedIn } from './lib/auth-roles';
 
 const COOKIE = 'casta4_session';
 const PROTECTED_PREFIXES = ['/dashboard', '/catastrophe'];
@@ -26,16 +26,10 @@ export function middleware(request) {
   }
 
   const session = decodeSession(raw);
-  if (!session?.role) {
+  if (!isSignedIn(session)) {
     const url = request.nextUrl.clone();
     url.pathname = '/signin';
     url.searchParams.set('next', pathname);
-    return NextResponse.redirect(url);
-  }
-
-  if (!canAccessPath(session.role, pathname)) {
-    const url = request.nextUrl.clone();
-    url.pathname = session.role === 'underwriter' ? '/catastrophe' : '/dashboard';
     return NextResponse.redirect(url);
   }
 
