@@ -82,4 +82,4 @@ Open **http://localhost:3000** (landing) → **Sign in** → role-based workspac
 Ireri Linus Mugendi
 
 ---
-For more details, see the `DEPLOYMENT-GUIDE.md` or contact hello.linoai@gmail.com.
+For more details, see the `DEPLOYMENT-GUIDE.md` or contact immaculatemunde@gmail.com.
