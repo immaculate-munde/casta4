@@ -8,6 +8,12 @@ export const metadata = {
   description: 'Pluvial flood catastrophe modelling and ReAgent document intelligence for Kenya Re',
 };
 
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+};
+
 const themeScript = `(function(){try{var t=localStorage.getItem('casta4-theme');var d=t==='dark'||(t!=='light'&&window.matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.classList.toggle('dark',d);}catch(e){}})();`;
 
 export default function RootLayout({ children }) {

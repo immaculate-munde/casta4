@@ -60,7 +60,7 @@ function SourcePills({ sources }) {
 export default function ReAgentGeminiChat({ onClose, fullscreen, onToggleFullscreen }) {
   const { propertyContext } = useChatDrawer();
   const { user } = useUserSession();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sessions, setSessions] = useState([]);
   const [activeId, setActiveId] = useState(null);
   const [input, setInput] = useState('');
@@ -68,6 +68,14 @@ export default function ReAgentGeminiChat({ onClose, fullscreen, onToggleFullscr
   const endRef = useRef(null);
 
   const active = sessions.find((s) => s.id === activeId) || sessions[0];
+
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 1024px)');
+    const syncSidebar = () => setSidebarOpen(mq.matches);
+    syncSidebar();
+    mq.addEventListener('change', syncSidebar);
+    return () => mq.removeEventListener('change', syncSidebar);
+  }, []);
 
   useEffect(() => {
     const loaded = loadSessions();
@@ -95,10 +103,17 @@ export default function ReAgentGeminiChat({ onClose, fullscreen, onToggleFullscr
     );
   }, []);
 
+  function closeSidebarOnMobile() {
+    if (typeof window !== 'undefined' && window.matchMedia('(max-width: 1023px)').matches) {
+      setSidebarOpen(false);
+    }
+  }
+
   function handleNewChat() {
     const s = newSession();
     setSessions((prev) => [s, ...prev]);
     setActiveId(s.id);
+    closeSidebarOnMobile();
   }
 
   async function onSubmit(e) {
@@ -153,12 +168,23 @@ export default function ReAgentGeminiChat({ onClose, fullscreen, onToggleFullscr
 
   return (
     <div
-      className="flex h-full min-h-0 transition-colors duration-200"
+      className="flex h-full min-h-0 w-full transition-colors duration-200"
       style={{ background: 'var(--chat-bg)', color: 'var(--chat-text)' }}
     >
+      {sidebarOpen ? (
+        <button
+          type="button"
+          className="fixed inset-0 z-[60] bg-black/45 lg:hidden"
+          aria-label="Close chat history"
+          onClick={() => setSidebarOpen(false)}
+        />
+      ) : null}
+
       <aside
-        className={`flex shrink-0 flex-col border-r transition-[width] duration-300 ${
-          sidebarOpen ? 'w-64' : 'w-0 overflow-hidden border-r-0'
+        className={`flex shrink-0 flex-col border-r transition-[width,transform] duration-200 max-lg:fixed max-lg:inset-y-0 max-lg:left-0 max-lg:z-[70] max-lg:w-[min(280px,88vw)] max-lg:shadow-2xl ${
+          sidebarOpen ? 'max-lg:translate-x-0' : 'max-lg:pointer-events-none max-lg:-translate-x-full'
+        } lg:relative lg:translate-x-0 ${
+          sidebarOpen ? 'lg:w-64' : 'lg:w-0 lg:overflow-hidden lg:border-r-0'
         }`}
         style={{ borderColor: 'var(--chat-border)', background: 'var(--chat-sidebar)' }}
       >
@@ -189,7 +215,10 @@ export default function ReAgentGeminiChat({ onClose, fullscreen, onToggleFullscr
               <li key={s.id}>
                 <button
                   type="button"
-                  onClick={() => setActiveId(s.id)}
+                  onClick={() => {
+                    setActiveId(s.id);
+                    closeSidebarOnMobile();
+                  }}
                   className={`w-full truncate rounded-lg px-3 py-2 text-left text-sm ${
                     s.id === active?.id ? 'font-semibold' : 'opacity-90 hover:opacity-100'
                   }`}
@@ -212,7 +241,7 @@ export default function ReAgentGeminiChat({ onClose, fullscreen, onToggleFullscr
         </p>
       </aside>
 
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+      <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col">
         <header
           className="z-20 flex shrink-0 items-center gap-2 border-b px-2 py-2 sm:px-3"
           style={{
@@ -243,13 +272,12 @@ export default function ReAgentGeminiChat({ onClose, fullscreen, onToggleFullscr
             <button
               type="button"
               onClick={onToggleFullscreen}
-              className="flex h-8 w-8 items-center justify-center rounded-md text-sm font-medium hover:opacity-80 sm:h-9 sm:w-auto sm:px-2"
+              className="hidden h-9 items-center justify-center rounded-md px-2 text-sm font-medium hover:opacity-80 sm:flex"
               style={{ color: 'var(--chat-text)' }}
               aria-label={fullscreen ? 'Exit full screen' : 'Full screen'}
               title={fullscreen ? 'Exit full screen' : 'Full screen'}
             >
-              <span className="sm:hidden">{fullscreen ? '⊡' : '⛶'}</span>
-              <span className="hidden sm:inline">{fullscreen ? 'Exit full' : 'Full screen'}</span>
+              {fullscreen ? 'Exit full' : 'Full screen'}
             </button>
             <button
               type="button"
@@ -273,7 +301,7 @@ export default function ReAgentGeminiChat({ onClose, fullscreen, onToggleFullscr
 
           {!hasThread ? (
             <h1
-              className="relative z-[1] max-w-xl px-6 text-center text-3xl font-normal tracking-tight md:text-4xl"
+              className="relative z-[1] w-full max-w-md px-4 text-center text-2xl font-normal leading-snug tracking-tight text-balance sm:px-6 sm:text-3xl md:max-w-xl md:text-4xl"
               style={{ color: 'var(--chat-text)' }}
             >
               {emptyGreeting}
@@ -332,7 +360,7 @@ export default function ReAgentGeminiChat({ onClose, fullscreen, onToggleFullscr
             </p>
           ) : null}
           <div
-            className="mx-auto flex max-w-3xl items-end gap-2 rounded-3xl border-2 px-4 py-3 shadow-lg focus-within:ring-2 focus-within:ring-kenya-blue/40"
+            className="mx-auto flex w-full max-w-3xl items-end gap-2 rounded-2xl border-2 px-3 py-2.5 shadow-lg focus-within:ring-2 focus-within:ring-kenya-blue/40 sm:rounded-3xl sm:px-4 sm:py-3"
             style={{ borderColor: 'var(--chat-border)', background: 'var(--chat-panel)' }}
           >
             <textarea
