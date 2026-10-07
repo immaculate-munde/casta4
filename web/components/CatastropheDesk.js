@@ -2,6 +2,8 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import SignOutButton from '@/components/SignOutButton';
+import ThemeToggle from '@/components/ThemeToggle';
 import { fetchRagJson, ragApiBase } from '@/lib/api';
 import '@/styles/catastrophe.css';
 
@@ -55,6 +57,7 @@ export default function CatastropheDesk() {
   const popupRef = useRef(null);
 
   const [meta, setMeta] = useState(null);
+  const [portfolioSummary, setPortfolioSummary] = useState(null);
   const [summaryText, setSummaryText] = useState('Loading portfolio…');
   const [locations, setLocations] = useState([]);
   const [lossCurve, setLossCurve] = useState(null);
@@ -63,10 +66,9 @@ export default function CatastropheDesk() {
   const [detail, setDetail] = useState(null);
   const [caseOpen, setCaseOpen] = useState(false);
   const [loadError, setLoadError] = useState('');
-  const [thread, setThread] = useState([{ role: 'desk', text: 'Loading Nairobi synthetic portfolio…' }]);
-  const [ask, setAsk] = useState('');
   const [mapReady, setMapReady] = useState(false);
   const [pitch3d, setPitch3d] = useState(true);
+  const [dossierTab, setDossierTab] = useState('overview');
 
   const epNote = lossCurve?.points?.find((p) => p.tier === activeTier);
 
@@ -299,11 +301,14 @@ export default function CatastropheDesk() {
           if (cancelled) return;
 
           setMeta(metaData);
+          setPortfolioSummary(summary);
           setLossCurve(curve);
           const locs = exposure.locations || [];
           setLocations(locs);
+          const region = metaData.region_label || 'Portfolio';
+          const peril = metaData.peril_label || 'pluvial book';
           setSummaryText(
-            `${summary.location_count} locations · ${kes.format(summary.total_tiv_kes)} TIV · Nairobi pluvial book`
+            `${summary.location_count} locations · ${kes.format(summary.total_tiv_kes)} TIV · ${region} · ${peril}`
           );
 
           // Populate sources
@@ -326,12 +331,6 @@ export default function CatastropheDesk() {
             map.fitBounds(bounds, { padding: 40, maxZoom: 13 });
           }
 
-          setThread([
-            {
-              role: 'desk',
-              text: 'Nairobi synthetic portfolio loaded. Pick a tier, open a pin, and ask about susceptibility or modelled loss.',
-            },
-          ]);
         });
 
         mapInstance.current = map;
@@ -400,29 +399,12 @@ export default function CatastropheDesk() {
     ? activeLoss.hazard >= 0.5 ? 'high' : activeLoss.hazard >= 0.25 ? 'watch' : 'low'
     : 'low';
 
-  function answerQuestion(question) {
-    const row = locations.find((item) => item.loc_id === openId);
-    if (!row) return 'Open a location first.';
-    const q = question.toLowerCase();
-    if (/hazard|score|loss|tiv|value|portfolio|curve/.test(q)) {
-      if (detail?.tier_losses) {
-        return detail.tier_losses
-          .map((t) => `${t.label}: ${hazardPct(t.hazard)}, loss ${kes.format(t.loss_kes)}`)
-          .join('\n');
-      }
-    }
-    return `${row.loc_id}: ${row.housing_label}, ${hazardPct(row.hazard)} on ${activeTier}, loss ${kes.format(row.loss_kes)}.`;
-  }
-
-  function onSubmit(e) {
-    e.preventDefault();
-    const q = ask.trim();
-    if (!q) return;
-    setThread((t) => [...t, { role: 'user', text: q }, { role: 'desk', text: answerQuestion(q) }]);
-    setAsk('');
-  }
-
   const maxEp = Math.max(...(lossCurve?.ep_curve?.map((p) => p.loss_kes) || [1]), 1);
+  const hazardRank = openId ? sorted.findIndex((r) => r.loc_id === openId) + 1 : null;
+  const bookAvgHazard =
+    locations.length > 0 ? locations.reduce((s, r) => s + (r.hazard || 0), 0) / locations.length : 0;
+  const openRow = openId ? locations.find((r) => r.loc_id === openId) : null;
+  const tierPortfolioLoss = lossCurve?.points?.find((p) => p.tier === activeTier)?.portfolio_loss_kes;
 
   return (
     <div className="cat-root">
@@ -430,18 +412,23 @@ export default function CatastropheDesk() {
         <Link className="mark" href="/">
           <span className="mark-ribbon" aria-hidden="true" />
           <span className="mark-name">Kenya Re</span>
-          <span className="mark-desk">Nairobi flood desk</span>
+          <span className="mark-desk">{meta?.region_label ? `${meta.region_label} flood desk` : 'Flood desk'}</span>
         </Link>
         <p className="topbar-book">{summaryText}</p>
         <span className="synthetic-badge" title={meta?.data_label}>Synthetic data</span>
-        <Link className="text-link" href="/chat">Claims chat</Link>
+        <ThemeToggle className="!px-2 !py-1 !text-xs" />
+        <SignOutButton className="text-link border-0 bg-transparent p-0 font-inherit cursor-pointer text-inherit" />
       </header>
 
       <div className="desk">
         <aside className="register">
           <div className="register-head">
             <h1>Flood book</h1>
-            <p>600 illustrative Nairobi locations</p>
+            <p>
+              {portfolioSummary?.location_count
+                ? `${portfolioSummary.location_count} illustrative ${meta?.region_label || 'portfolio'} locations`
+                : `Loading ${meta?.region_label || 'portfolio'} locations…`}
+            </p>
             <label className="tier-label" htmlFor="tier-select">Hazard scenario</label>
             <select
               id="tier-select"
@@ -457,6 +444,11 @@ export default function CatastropheDesk() {
             </select>
           </div>
           <div className="register-list">
+            <div className="register-table-head">
+              <span>Location</span>
+              <span>Hazard</span>
+              <span>TIV</span>
+            </div>
             {sorted.map((row) => (
               <button
                 key={row.loc_id}
@@ -465,13 +457,16 @@ export default function CatastropheDesk() {
                 onClick={() => {
                   setOpenId(row.loc_id);
                   setCaseOpen(true);
+                  setDossierTab('overview');
                   panTo(row);
                 }}
               >
-                <strong>{row.loc_id}</strong>
+                <div className="risk-primary">
+                  <strong>{row.loc_id}</strong>
+                  <span className="risk-sub">{row.housing_label}</span>
+                </div>
                 <span className={`risk-pct ${row.hazard_band}`}>{hazardPct(row.hazard)}</span>
-                <span>{row.housing_label}</span>
-                <span>{kes.format(row.tiv_kes)}</span>
+                <span className="risk-money">{kes.format(row.tiv_kes)}</span>
               </button>
             ))}
             {locations.length > 120 && (
@@ -523,80 +518,117 @@ export default function CatastropheDesk() {
         </main>
 
         <aside className={`case${caseOpen ? ' is-open' : ''}`}>
-          <section className="dossier">
+          <section className="dossier dossier-full">
             {!openId || !detail ? (
               <div className="empty">
-                <p className="kicker">Property file</p>
-                <h2>Select a location on the map.</h2>
+                <p className="kicker">Selected area</p>
+                <h2>Select a location on the map or from the list.</h2>
+                <p className="empty-hint">Use ReAgent in the corner for policy and treaty questions.</p>
               </div>
             ) : (
               <>
-                <p className="kicker">{detail.housing_label} · Synthetic</p>
-                <h2 className="dossier-title">{detail.loc_id}</h2>
-                <p className="policy-no">
-                  {detail.lat.toFixed(5)}, {detail.lon.toFixed(5)}
-                </p>
-                <div className="stat-row">
-                  <div>
-                    <strong className={level}>{hazardPct(activeLoss?.hazard)}</strong>
-                    <span>Susceptibility</span>
-                  </div>
-                  <div>
-                    <strong>{pct.format(activeLoss?.damage_ratio || 0)}</strong>
-                    <span>Damage ratio</span>
-                  </div>
-                  <div>
-                    <strong>{kes.format(activeLoss?.loss_kes || 0)}</strong>
-                    <span>Modelled loss</span>
-                  </div>
+                <div className="dossier-top">
+                  <p className="kicker">{detail.housing_label} · {meta?.region_label || 'Portfolio'}</p>
+                  <h2 className="dossier-title">{detail.loc_id}</h2>
+                  <p className="policy-no">
+                    {detail.lat.toFixed(5)}, {detail.lon.toFixed(5)}
+                  </p>
                 </div>
-                <div className="risk-meter">
-                  <i className={level} style={{ width: `${Math.round((activeLoss?.hazard || 0) * 100)}%` }} />
+                <nav className="dossier-tabs" aria-label="Location detail sections">
+                  {[
+                    { id: 'overview', label: 'Overview' },
+                    { id: 'scenarios', label: 'Scenarios' },
+                    { id: 'exposure', label: 'Exposure' },
+                  ].map((tab) => (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      className={dossierTab === tab.id ? 'is-active' : ''}
+                      onClick={() => setDossierTab(tab.id)}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </nav>
+                <div className="dossier-body">
+                  {dossierTab === 'overview' ? (
+                    <>
+                      <div className="stat-row">
+                        <div>
+                          <strong className={level}>{hazardPct(activeLoss?.hazard)}</strong>
+                          <span>Susceptibility ({activeTier})</span>
+                        </div>
+                        <div>
+                          <strong>{pct.format(activeLoss?.damage_ratio || 0)}</strong>
+                          <span>Damage ratio</span>
+                        </div>
+                        <div>
+                          <strong>{kes.format(activeLoss?.loss_kes || 0)}</strong>
+                          <span>Modelled loss</span>
+                        </div>
+                      </div>
+                      <div className="risk-meter">
+                        <i className={level} style={{ width: `${Math.round((activeLoss?.hazard || 0) * 100)}%` }} />
+                      </div>
+                      <dl className="context-grid">
+                        <div>
+                          <dt>Hazard rank (book)</dt>
+                          <dd>{hazardRank ? `#${hazardRank} of ${sorted.length} listed` : '—'}</dd>
+                        </div>
+                        <div>
+                          <dt>Vs book average</dt>
+                          <dd>
+                            {openRow
+                              ? `${((openRow.hazard - bookAvgHazard) * 100).toFixed(0)} pts ${openRow.hazard >= bookAvgHazard ? 'above' : 'below'} avg`
+                              : '—'}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt>Active scenario</dt>
+                          <dd>{meta?.tiers?.find((t) => t.id === activeTier)?.label || activeTier}</dd>
+                        </div>
+                        <div>
+                          <dt>Portfolio loss @ tier</dt>
+                          <dd>{tierPortfolioLoss != null ? kes.format(tierPortfolioLoss) : '—'}</dd>
+                        </div>
+                      </dl>
+                    </>
+                  ) : null}
+                  {dossierTab === 'scenarios' ? (
+                    <>
+                      <p className="section-label">Loss by return period</p>
+                      <table className="tier-table">
+                        <thead>
+                          <tr><th>Tier</th><th>Hazard</th><th>Damage</th><th>Loss</th></tr>
+                        </thead>
+                        <tbody>
+                          {(detail.tier_losses || []).map((t) => (
+                            <tr key={t.tier} className={t.tier === activeTier ? 'is-active' : ''}>
+                              <td>{t.label}</td>
+                              <td>{hazardPct(t.hazard)}</td>
+                              <td>{pct.format(t.damage_ratio)}</td>
+                              <td>{kes.format(t.loss_kes)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </>
+                  ) : null}
+                  {dossierTab === 'exposure' ? (
+                    <>
+                      <p className="section-label">Exposure file</p>
+                      <dl className="fields">
+                        <div><dt>TIV</dt><dd>{kes.format(detail.tiv_kes)}</dd></div>
+                        <div><dt>Floor area</dt><dd>{detail.floor_area_m2.toLocaleString('en-KE')} m²</dd></div>
+                        <div><dt>Hazard band</dt><dd>{openRow?.hazard_band || level}</dd></div>
+                        <div className="wide"><dt>Data source</dt><dd>{detail.source}</dd></div>
+                        <div className="wide"><dt>Model note</dt><dd>{meta?.data_label || 'Synthetic proxy'}</dd></div>
+                      </dl>
+                    </>
+                  ) : null}
                 </div>
-                <p className="section-label">Loss by return period</p>
-                <table className="tier-table">
-                  <thead>
-                    <tr><th>Tier</th><th>Hazard</th><th>Damage</th><th>Loss</th></tr>
-                  </thead>
-                  <tbody>
-                    {(detail.tier_losses || []).map((t) => (
-                      <tr key={t.tier} className={t.tier === activeTier ? 'is-active' : ''}>
-                        <td>{t.label}</td>
-                        <td>{hazardPct(t.hazard)}</td>
-                        <td>{pct.format(t.damage_ratio)}</td>
-                        <td>{kes.format(t.loss_kes)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                <p className="section-label">Exposure file</p>
-                <dl className="fields">
-                  <div><dt>TIV</dt><dd>{kes.format(detail.tiv_kes)}</dd></div>
-                  <div><dt>Floor area</dt><dd>{detail.floor_area_m2.toLocaleString('en-KE')} m²</dd></div>
-                  <div className="wide"><dt>Source</dt><dd>{detail.source}</dd></div>
-                </dl>
               </>
             )}
-          </section>
-          <section className="copilot">
-            <header className="copilot-head">
-              <h2>Underwriter</h2>
-              <p>{openId ? `${openId} open` : 'No property open'}</p>
-            </header>
-            <div className="thread">
-              {thread.map((m, i) => (
-                <div key={i} className={`bubble ${m.role}`}>{m.text}</div>
-              ))}
-            </div>
-            <form className="composer" onSubmit={onSubmit}>
-              <textarea
-                value={ask}
-                onChange={(e) => setAsk(e.target.value)}
-                rows={2}
-                placeholder="Ask about hazard, TIV, or loss"
-              />
-              <button type="submit">Ask</button>
-            </form>
           </section>
         </aside>
       </div>
