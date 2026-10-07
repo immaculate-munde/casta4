@@ -18,7 +18,7 @@ ReAgent-AI/
   rag-server.js     # Express RAG server
   rag.js, retrieve.js # RAG utilities and scripts
   vector_store/     # Vector DB files
-  docs/             # Policy, treaty, claim form, investigation report, historical claims
+  docs/             # Nairobi flood policy, treaty, claim form, flood investigation, historical claims
 ```
 
 ## Getting Started

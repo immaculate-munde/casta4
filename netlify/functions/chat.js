@@ -14,7 +14,7 @@ const greetingResponses = {
 const commonQueries = {
   "what do you do": "I support reinsurance claims assessment and underwriting for Kenya Re: retrieve relevant policy/treaty clauses, check coverage and exclusions, flag anomalies, apply escalation/referral rules, and produce a cited recommendation for human review.",
   "how can you help": "I can retrieve treaty and policy clauses, check whether a claim appears covered or excluded, flag missing documents or anomalies, and highlight referral conditions that require human escalation. Try asking: \"What does the treaty say about claim referral thresholds?\"",
-  "what information do you have": "I work from the knowledge base of policy wording, the reinsurance treaty, claim forms, fire investigation reports, and related claims context for Kenya Re decision support.",
+  "what information do you have": "I work from the knowledge base of policy wording, the reinsurance treaty, claim forms, flood investigation reports, and related Nairobi flood claims context for Kenya Re decision support.",
   "help": "Ask about coverage, exclusions, treaty retention/capacity, claim referral thresholds (e.g. Article 6), missing documentation, or whether a claim should be escalated to a human reviewer."
 };
 

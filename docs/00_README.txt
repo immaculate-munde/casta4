@@ -1,64 +1,69 @@
-ReAgent AI - Synthetic Data Pack (Step 1 of the build roadmap)
-================================================================
+ReAgent AI - Nairobi Flood Hazard Data Pack (Team A)
+====================================================
 
-This pack is a self-contained, realistic reinsurance claims scenario for the
-Kenya Re AI4I Hackathon 2026 (theme: Redefining Reinsurance Business Processes
-with Agentic AI and Machine Learning).
+This pack is the RAG-facing claims scenario for the Kenya Re AI4I Hackathon 2026
+Team A track: Nairobi urban (pluvial) flood catastrophe decision-support.
 
-Scenario: Mavuno Textiles Limited, a Nairobi textile factory, suffers a fire.
-The claim (KES 85,000,000) sits above the cedant's treaty retention, so it
-becomes a reinsurance claim for Kenya Re.
+It matches the catastrophe desk in this repo:
+  - Synthetic exposure + hazard scores: data/team_a_nairobi/
+  - Flood CAT engine: lib/nairobi-flood-cat.js (return-period tiers, damage ratios)
+  - Desk UI: /catastrophe (Next.js) or public/catastrophe.html
+
+Scenario: Kariobangi Cold Storage & Logistics Ltd suffers a pluvial flood loss
+during the April 2026 long rains. The claim (KES 92,000,000) sits above the
+cedant's treaty retention, so it becomes a reinsurance claim for Kenya Re.
+Hazard context is consistent with Team A hotspot list (Kariobangi, Dandora,
+Mathare, and related Eastlands drainage corridors) and the 0–1 susceptibility
+scores used on the catastrophe desk (not measured flood depth).
 
 FILES
 
 01_policy.txt
-  The original insurance policy (Amani General -> Mavuno Textiles). Contains
-  perils covered, exclusions, warranties (fire protection, housekeeping), and
-  the excess/deductible. Your Claims Agent needs this to check coverage.
+  Commercial flood / special perils policy (Amani General -> Kariobangi Cold
+  Storage). Perils, flood-specific exclusions, warranties (drainage clearance,
+  elevated storage / flood mark), excess. Used by the Claims Agent for coverage.
 
 02_reinsurance_treaty.txt
-  The Kenya Re treaty with the cedant. Contains retention/capacity, the
-  underwriting "Section 4.2" enhanced-assessment clause your original prompt
-  referenced, exclusions, and - importantly - Article 6, which lists exactly
-  the conditions that require escalation to a human before a claim can be
-  settled. This is the single most useful document for demoing "agentic"
-  decision logic, since Article 6.1(a)-(d) gives you clean, checkable
-  escalation triggers.
+  Kenya Re surplus treaty for the flood-exposed commercial book. Retention /
+  capacity, enhanced-assessment rules, exclusions, and Article 6 — the referral
+  conditions that must be checked before settlement. Primary document for
+  demoing agentic escalation (Article 6.1(a)-(d)).
 
 03_claim_form.txt
-  The claim as submitted. Deliberately incomplete: the fire investigation
-  report and sprinkler maintenance records are marked as outstanding at
-  submission time. Good for testing "agent detects missing documentation."
+  The claim as submitted after the April 2026 pluvial event. Deliberately
+  incomplete: independent flood investigation and drainage-maintenance records
+  are outstanding. Good for testing "agent detects missing documentation."
 
-04_fire_investigation_report.txt
-  The independent loss adjuster's report, delivered ~2 weeks after the claim
-  form. Contains a lower preliminary estimate than the insured's claim, and
-  flags a probable Warranty breach (lapsed sprinkler maintenance, poor
-  housekeeping) without giving a legal conclusion - exactly the kind of
-  judgment call your Claims Agent should surface for human review rather
-  than decide on its own.
+04_flood_investigation_report.txt
+  Independent loss adjuster's flood investigation. Lower preliminary estimate
+  than the insured's claim; flags probable
+  Warranty breaches (uncleared drains, stock stored below declared flood mark)
+  without giving a legal conclusion — judgment calls for human review.
 
 05_historical_claims.csv
-  29 prior claims plus this one (30 rows), for your anomaly/risk model.
-  Useful signals already built in: claim-to-sum-insured ratio, notification
-  delay, whether fire protection was present, and claim count for the
-  insured. Row HC-030 (the current claim) already looks unusual on several
-  of these axes on purpose - no sprinkler, 2 prior claims, cause still
-  under investigation - so your model should be able to flag it without
-  much tuning.
+  29 prior flood (and related water) claims plus this one (30 rows) for the
+  anomaly / risk check in lib/anomalyCheck.js. Signals: claim-to-sum-insured
+  ratio, notification delay, flood defences present, drainage maintained,
+  prior claim count. Row HC-030 (current claim) is unusual on purpose: no
+  flood defences, drainage not maintained, 2 prior water claims, cause still
+  under investigation.
+
+RELATIONSHIP TO CATASTROPHE DESK DATA
+
+  Hazard tiers (common → extreme) map to return periods 5 / 10 / 25 / 100 / 250
+  years in lib/nairobi-flood-cat.js. Exposure rows are synthetic; scores are a
+  pluvial susceptibility proxy (0–1), not surveyed depths. Hotspots in
+  nairobi_hotspots_geocoded.csv are county-named flood-prone localities used
+  for map validation — not policy locations.
 
 SUGGESTED FIRST TEST
 
 Ask your RAG layer: "What does the treaty say about when a claim must be
 referred to Kenya Re before settlement?" It should retrieve Article 6.1 from
-02_reinsurance_treaty.txt and correctly identify that this claim triggers at
-least two of the four conditions (loss exceeds KES 60,000,000, and cause /
-warranty applicability is in doubt pending the investigation report).
+02_reinsurance_treaty.txt and identify that this claim triggers at least two
+conditions (gross loss exceeds KES 60,000,000; cause / warranty applicability
+in doubt pending the flood investigation).
 
-NEXT STEPS (per the roadmap)
-  Step 2: Ingest these into your existing HNSWLib/embeddings pipeline, test
-          retrieval quality on questions like the one above.
-  Step 3: Build the anomaly/risk check against 05_historical_claims.csv.
-  Step 4: Build the agent that ties retrieval + anomaly check + escalation
-          logic together and produces a recommendation with citations.
-  Step 5: Dashboard showing the agent's reasoning trace.
+Follow-up: "Does the flood investigation suggest any warranty breach?" should
+cite Warranty 1 (drainage) and Warranty 2 (elevated storage) from the policy
+and the adjuster's findings in 04_flood_investigation_report.txt.

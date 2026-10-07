@@ -1,19 +1,24 @@
 KENYA REINSURANCE CORPORATION LIMITED
-FIRE AND SPECIAL PERILS SURPLUS REINSURANCE TREATY
+FLOOD AND SPECIAL PERILS SURPLUS REINSURANCE TREATY
 
-Treaty Reference: KR/AGI/SUR/2026
+Treaty Reference: KR/AGI/FLD/SUR/2026
 Reinsurer: Kenya Reinsurance Corporation Limited ("Kenya Re")
 Cedant: Amani General Insurance Company Limited ("the Cedant")
-Class of Business: Fire and Special Perils (Commercial and Industrial risks)
+Class of Business: Flood and Special Perils (Commercial and Industrial risks), with
+emphasis on urban pluvial and fluvial flood exposures in the Republic of Kenya
 Treaty Type: Surplus (proportional)
 Period: 1 January 2026 to 31 December 2026, and each anniversary thereafter unless
 terminated in accordance with Article 14.
 
 ARTICLE 1 - SCOPE
 
-This Treaty covers the Cedant's Fire and Special Perils portfolio written in the
-Republic of Kenya, including manufacturing, warehousing, commercial and industrial
-occupancies, subject to the terms, conditions, limits and exclusions set out below.
+This Treaty covers the Cedant's Flood and Special Perils portfolio written in the
+Republic of Kenya, including warehousing, cold storage, manufacturing, commercial and
+industrial occupancies exposed to storm, tempest, and flood (including Nairobi urban
+pluvial inundation and drainage overflow), subject to the terms, conditions, limits
+and exclusions set out below. Portfolio catastrophe views may reference Kenya Re's
+Nairobi flood desk hazard tiers (return periods 5 / 10 / 25 / 100 / 250 years) for
+underwriting context; such models do not amend the indemnity terms of this Treaty.
 
 ARTICLE 2 - CEDANT'S RETENTION AND TREATY CAPACITY
 
@@ -29,12 +34,16 @@ ARTICLE 2 - CEDANT'S RETENTION AND TREATY CAPACITY
 
 ARTICLE 3 - RISKS REQUIRING ENHANCED ASSESSMENT
 
-3.1 Any risk with a total Sum Insured exceeding KES 300,000,000 shall be classified
-    as an Enhanced Assessment Risk.
+3.1 Any risk with a total Sum Insured exceeding KES 300,000,000, or any risk located
+    in a named Nairobi flood hotspot corridor (including but not limited to
+    Kariobangi, Dandora, Mathare, Kibera, Kawangware, Kayole, Njiru, and Ruai as
+    used on the Kenya Re Nairobi flood desk), shall be classified as an Enhanced
+    Assessment Risk.
 3.2 For Enhanced Assessment Risks, the Cedant shall, prior to binding cover, provide
-    Kenya Re with: (a) a detailed risk survey report not older than 24 months;
-    (b) confirmation of fire protection measures in place; (c) loss history for the
-    preceding 5 years; and (d) construction and occupancy details.
+    Kenya Re with: (a) a risk survey not older than 24 months addressing drainage
+    and flood-mark storage; (b) confirmation of flood-mitigation measures in place;
+    (c) loss history for the preceding 5 years; and (d) occupancy and construction
+    details including housing/building vulnerability class where relevant.
 3.3 Underwriting guideline reference: Section 4.2 of the Kenya Re Underwriting
     Manual requires that Enhanced Assessment Risks be reviewed by a Senior
     Underwriter before automatic cession is confirmed, and that any risk with
@@ -61,12 +70,13 @@ ARTICLE 5 - CLAIMS NOTIFICATION AND COOPERATION
     or circumstance likely to involve this Treaty, and in any event immediately for
     any claim where the estimated gross loss exceeds KES 20,000,000.
 5.2 The Cedant shall provide Kenya Re with all documentation reasonably required to
-    assess the claim, including the claim form, original Policy, loss adjuster or
-    investigation reports, invoices, photographs, and any other supporting evidence.
+    assess the claim, including the claim form, original Policy, flood investigation
+    or loss adjuster reports, stock records, photographs, drainage-maintenance logs,
+    and any other supporting evidence.
 5.3 Kenya Re shall be entitled to appoint its own loss adjuster, at its own cost, to
     review any claim where the Cedant's estimated gross loss exceeds
     KES 50,000,000, or where Kenya Re reasonably considers the claim to be unusual
-    having regard to the Cedant's historical claims experience under this Treaty.
+    having regard to the Cedant's historical flood claims experience under this Treaty.
 5.4 Claims shall be settled by the Cedant in accordance with the terms of the
     original Policy. Kenya Re shall follow the fortunes of the Cedant, provided
     that the claim has been handled by the Cedant in good faith and in accordance
@@ -77,16 +87,17 @@ ARTICLE 6 - CLAIMS REQUIRING PRIOR REFERRAL TO KENYA RE
 6.1 Notwithstanding Article 5.4, the Cedant shall obtain Kenya Re's prior written
     agreement before settling any claim where:
     (a) the estimated gross loss exceeds KES 60,000,000; or
-    (b) there is a reasonable suspicion of arson, fraud, or material
-        misrepresentation at inception; or
+    (b) there is a reasonable suspicion of fraud, material misrepresentation at
+        inception, or deliberate obstruction of drainage; or
     (c) the cause of loss, or the applicability of a Policy exclusion or
-        Warranty, is genuinely in doubt; or
+        Warranty (including drainage and elevated-storage warranties), is
+        genuinely in doubt; or
     (d) required documentation under the original Policy (including but not
-        limited to fire investigation or loss adjuster reports) has not yet
-        been furnished.
+        limited to flood investigation or loss adjuster reports, and drainage-
+        maintenance records) has not yet been furnished.
 6.2 Where none of the conditions in Article 6.1 apply, and the claim is otherwise
-    consistent with the Cedant's normal claims experience, the Cedant may proceed
-    to settle the claim without further reference to Kenya Re, subject to
+    consistent with the Cedant's normal flood claims experience, the Cedant may
+    proceed to settle the claim without further reference to Kenya Re, subject to
     Article 5.2.
 
 ARTICLE 7 - PREMIUM AND COMMISSION
@@ -102,8 +113,12 @@ otherwise stated.
 ARTICLE 9 - CATASTROPHE PROTECTION
 
 This Treaty operates net of the Cedant's own Catastrophe Excess of Loss
-protection, where applicable. A single occurrence affecting multiple risks ceded
-under this Treaty shall be aggregated for the purposes of any such protection.
+protection, where applicable. A single occurrence (including a continuous
+rainfall/flood event defined as one occurrence under the Cedant's original
+wording) affecting multiple risks ceded under this Treaty shall be aggregated
+for the purposes of any such protection. Nairobi pluvial events affecting
+multiple Eastlands locations in the same meteorological episode are treated as
+one occurrence unless the Cedant's original policies define otherwise.
 
 ARTICLE 10 to 13 - [General conditions: arbitration, errors and omissions,
 inspection of records, offset, taxation - standard treaty wording, on file with

@@ -1,0 +1,107 @@
+INDEPENDENT FLOOD INVESTIGATION REPORT
+
+Prepared by: Ridgeway Loss Adjusters & Assessors Ltd
+Report Reference: RWA/FLD/2026/0412
+For: Amani General Insurance Company Limited
+Re: Kariobangi Cold Storage & Logistics Limited - Plot 7, Outer Ring Road,
+    Kariobangi South, Nairobi
+Claim Reference: AGI/CLM/2026/2048
+Date of Report: 28 April 2026
+Date of Site Inspection: 18 April 2026
+
+1. INSTRUCTIONS
+
+We were instructed by Amani General Insurance Company Limited to attend the site,
+investigate the cause and mechanism of the flood loss of 14–15 April 2026, and to
+comment on the extent of loss and the condition of flood-mitigation measures
+(drainage clearance and elevated storage / flood mark) at the time of the incident.
+
+2. FINDINGS - CAUSE AND MECHANISM
+
+2.1 Physical evidence and neighbour statements confirm that intense overnight
+    rainfall produced widespread surface-water ponding along Outer Ring Road and
+    the Kariobangi South drainage corridor on 14–15 April 2026. This is consistent
+    with known Eastlands pluvial hotspots (Kariobangi, Dandora, and adjacent
+    catchments) used in Kenya Re's Nairobi flood desk hotspot list.
+2.2 Water entered the Insured's yard primarily from the roadside storm-water
+    channel adjacent to the loading bay. At inspection we found the channel
+    heavily silted, with solid waste and packaging debris obstructing the culvert
+    inlet serving the site frontage. Water marks on the loading-bay walls indicate
+    peak external depth of approximately 50–55 cm above yard level.
+2.3 Inside the main cold-room hall, water marks and silt lines indicate peak
+    inundation of approximately 38 cm above finished floor level — above the
+    Policy's declared flood mark of 0.45 m only in the sense that stock on the
+    lowest tier (stored at roughly 0.15–0.20 m above floor on pallets) was fully
+    immersed; the declared warranty requires lowest storage not less than 0.45 m.
+2.4 In our professional opinion, the most probable cause is accidental pluvial /
+    urban flood arising from extreme rainfall combined with inadequate local
+    drainage conveyance at the site frontage. We found no evidence of deliberate
+    diversion of water onto the premises by a third party. We cannot entirely
+    exclude contribution from upstream public-system surcharge, but site-level
+    blockage materially increased the depth and duration of inundation on this risk.
+
+3. FINDINGS - FLOOD MITIGATION AND WARRANTIES
+
+3.1 Drainage clearance (Warranty 1): We requested Q1 2026 drainage clearance /
+    maintenance logs required under Warranty 1(a). At inspection, the Insured
+    produced only an informal WhatsApp instruction to a casual labourer dated
+    February 2026; no dated photographic log or contractor invoice for the
+    mandatory 90-day clearance cycle covering March–April 2026 was available.
+    The obstructed culvert inlet and silted channel are, in our view, consistent
+    with lack of recent clearance and are more likely than not to have increased
+    the depth of water entering the loading bay.
+3.2 Temporary flood defences (Warranty 1(b)): A small store of sandbags was present
+    but partially degraded and not pre-positioned at the loading-bay doors when
+    the Kenya Meteorological Department heavy-rainfall advisory for Nairobi was
+    issued on the afternoon of 14 April 2026. Staff placed bags after water was
+    already rising — too late to prevent entry.
+3.3 Elevated storage / flood mark (Warranty 2): Ground-tier pallets of frozen
+    foodstuffs were stored with base height approximately 0.15–0.20 m above floor
+    level, below the 0.45 m declared flood mark. Upper racking above ~0.50 m was
+    largely dry. Stock loss is concentrated on the non-compliant lower tiers.
+    Plant motors mounted at floor level in the plant room were similarly below
+    any elevated mounting that might have limited electrical damage.
+3.4 We are not qualified to opine on the legal effect of any warranty breach; that
+    is a matter for the Insurer's claims and legal assessment. We can confirm that
+    the drainage and storage deficiencies noted above are, in our professional
+    opinion, more likely than not to have contributed to the extent of the loss.
+
+4. ESTIMATED EXTENT OF LOSS (Adjuster's Preliminary Assessment)
+
+  Buildings (cold hall flooring/panels, loading bay, lobby):
+      Adjuster estimate:                          KES 16,200,000
+  Plant and Machinery (refrigeration motors, switchgear, damaged racking):
+      Adjuster estimate:                          KES 23,500,000
+  Stock (spoiled / contaminated — lower tiers; upper tiers mostly salvageable):
+      Adjuster estimate, pending final write-off reconciliation:
+                                                    KES 38,000,000 to 41,000,000
+  Clean-up, drying, temporary cold hire:
+      Adjuster estimate:                           KES 1,800,000
+  ---------------------------------------------------------------------------
+  Preliminary Adjuster Estimate (Total):    KES 79,500,000 to 82,500,000
+
+This preliminary estimate is below the Insured's claimed figure of KES 92,000,000,
+principally due to differences in assessed stock write-off on upper tiers and
+plant salvage assumptions, pending final reconciliation.
+
+5. OBSERVATIONS RELEVANT TO POLICY WARRANTIES
+
+We note for the Insurer's consideration that the apparent lapse in drainage
+clearance (Warranty 1) and storage below the declared flood mark (Warranty 2)
+may be relevant to warranty compliance and to any reduction of indemnity. The
+loss itself is assessed as a genuine flood event; the open questions are extent
+and warranty application, not whether flooding occurred.
+
+6. RECOMMENDATIONS
+
+  1. Obtain contractor invoices / dated photographic logs for drainage clearance
+     covering January–April 2026, or confirm their absence.
+  2. Finalise stock write-off against the 13 April inventory and temperature logs.
+  3. Obtain asset-register / invoice support for refrigeration plant claimed.
+  4. Consider Kenya Re referral under Treaty Article 6 given gross loss above
+     KES 60,000,000, outstanding documentation, and warranty doubt.
+  5. We consider the claim, subject to the above outstanding items and the
+     Insurer's assessment of warranty compliance, to be a genuine pluvial flood
+     loss arising from the April 2026 Eastlands rainfall event.
+
+Prepared by: S. Mutiso, Senior Loss Adjuster, Ridgeway Loss Adjusters & Assessors Ltd

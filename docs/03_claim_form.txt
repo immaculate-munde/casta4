@@ -1,72 +1,74 @@
 AMANI GENERAL INSURANCE COMPANY LIMITED
-CLAIM FORM - FIRE AND SPECIAL PERILS
+CLAIM FORM - FLOOD AND SPECIAL PERILS
 
-Claim Reference: AGI/CLM/2026/1187
-Policy Number: AGI/FIRE/2025/00842
-Insured: Mavuno Textiles Limited
-Risk Address: Plot 14, Kariobangi Industrial Area, Nairobi, Kenya
+Claim Reference: AGI/CLM/2026/2048
+Policy Number: AGI/FLD/2025/02116
+Insured: Kariobangi Cold Storage & Logistics Limited
+Risk Address: Plot 7, Outer Ring Road, Kariobangi South, Nairobi, Kenya
 
 1. DETAILS OF LOSS
 
-Date of Loss: 3 August 2026
-Time of Loss: Approximately 02:40 hrs
-Date Reported to Insurer: 4 August 2026
-Cause of Loss (as understood by Insured): Fire, believed to have started in the
-dye house near the boiler room, spreading to the adjoining warehouse before being
-brought under control by Nairobi County Fire Brigade at approximately 06:15 hrs.
+Date of Loss: 14–15 April 2026 (overnight into early morning)
+Time of Loss: Inundation first observed approximately 23:10 hrs on 14 April 2026;
+peak water depth inside the main cold-room hall approximately 01:40 hrs on 15 April 2026
+Date Reported to Insurer: 15 April 2026
+Cause of Loss (as understood by Insured): Pluvial / urban flood following intense
+rainfall over Nairobi Eastlands. Surface water entered from Outer Ring Road and the
+blocked roadside drain adjoining the loading bay; water ponded across the yard and
+entered the cold-room hall through loading-bay doors. Consistent with Kariobangi /
+Dandora drainage-corridor flooding reported across neighbouring premises the same night.
 
 2. DESCRIPTION OF INCIDENT
 
-The night shift supervisor, Mr. Peter Kamau, reported smelling smoke at
-approximately 02:35 hrs and raised the alarm. The internal fire marshal team
-attempted to contain the fire using portable extinguishers but were unable to
-control it due to its rapid spread through stored cotton lint in the warehouse
-section adjoining the dye house. The Nairobi County Fire Brigade was called at
-02:48 hrs and arrived on site at approximately 03:20 hrs. The fire was fully
-extinguished by 06:15 hrs. No fatalities were reported. Two employees were treated
-for smoke inhalation at Kenyatta National Hospital and discharged the same day.
+The night supervisor, Ms. Amina Otieno, reported water rising across the yard at
+approximately 23:10 hrs and raised the internal alarm. Staff attempted to move
+palletised stock onto higher racking and to sandbag the loading-bay doors, but water
+entered faster than barriers could be placed. Peak depth inside the main hall was
+estimated at 35–40 cm above finished floor level. Floodwater began to recede after
+04:30 hrs on 15 April 2026 as rainfall eased and the county storm-water system
+partially cleared. No fatalities were reported. Refrigeration plant shorted when
+water reached motor bases in the plant room; backup generator was started but could
+not restore full cold-chain capacity until electrical isolation was completed.
 
 3. ITEMS/PROPERTY AFFECTED
 
-  - Dye house structure and dyeing vats: substantially destroyed
-  - Adjoining warehouse structure: significant fire and water damage
-  - Stock (raw cotton, yarn, packaging materials) stored in warehouse: total loss
-  - Finished garment stock in a separate, unaffected store: no damage reported
-  - Administration block: minor smoke damage only
-  - Spinning and weaving floor (separate building): no fire damage reported, minor
-    smoke residue reported by the Insured, still being assessed
+  - Main cold-room hall: floodwater damage to lower racking, flooring, and wall panels
+  - Loading bay and yard: silt, debris, and damaged roller-door seals
+  - Stock on ground-level and first racking tiers: substantial spoilage / contamination
+  - Refrigeration plant motors and switchgear at base level: water damage
+  - Administration block: minor water ingress at entrance lobby only
+  - Upper-tier racked stock (above declared flood mark): largely unaffected, still
+    being temperature-audited for cold-chain breach duration
 
 4. ESTIMATED CLAIM AMOUNT
 
-  Buildings (dye house and warehouse):           KES 38,000,000
-  Plant and Machinery (dyeing vats, boilers):     KES 22,000,000
-  Stock (raw cotton, yarn, packaging):            KES 24,000,000
-  Smoke damage to administration block (est.):     KES 1,000,000
+  Buildings (cold hall, loading bay, lobby):        KES 18,500,000
+  Plant and Machinery (refrigeration, electrics):   KES 27,000,000
+  Stock (spoiled / contaminated foodstuffs):        KES 44,500,000
+  Clean-up, drying, and temporary cold hire (est.): KES 2,000,000
   ---------------------------------------------------------------
-  Total Claimed:                                  KES 85,000,000
+  Total Claimed:                                    KES 92,000,000
 
 5. SUPPORTING DOCUMENTS ENCLOSED
 
   [X] Copy of Policy Schedule
-  [X] Fire Brigade attendance confirmation (verbal, written report awaited)
-  [ ] Fire investigation report - NOT YET RECEIVED, requested from independent
-      loss adjuster, expected within 10 working days
-  [X] Photographs of the affected areas (24 images)
-  [ ] Stock records / inventory as at date of loss - PARTIALLY PROVIDED, warehouse
-      stock ledger for July 2026 provided; August entries not yet reconciled
-  [ ] Invoices for machinery being claimed as total loss - NOT YET PROVIDED
-  [X] Maintenance/service record for fire extinguishers (last serviced March 2026)
-  [ ] Maintenance/service record for sprinkler system in dye house - REQUESTED,
-      NOT YET RECEIVED
-  [X] Statement from night shift supervisor (Mr. Peter Kamau)
+  [X] Photographs of inundation and debris (38 images)
+  [X] Kenya Meteorological Department rainfall summary for Nairobi, 14–15 April 2026
+  [ ] Independent flood investigation / loss adjuster report - NOT YET RECEIVED,
+      instructed 16 April 2026, expected within 10 working days
+  [X] Stock inventory extract as at 13 April 2026
+  [ ] Final stock reconciliation after write-off - PARTIALLY PROVIDED
+  [ ] Drainage clearance / maintenance log for Q1 2026 - REQUESTED, NOT YET RECEIVED
+  [X] Statement from night supervisor (Ms. Amina Otieno)
   [X] List of previous claims under this Policy (see Section 6)
+  [ ] Invoices for refrigeration plant claimed as damaged - PARTIALLY PROVIDED
 
 6. PREVIOUS CLAIMS UNDER THIS POLICY (as declared by Insured)
 
-  - March 2024: Minor fire, electrical fault in weaving section. Claimed
-    KES 1,200,000. Settled KES 950,000.
-  - November 2024: Water damage from burst pipe in warehouse. Claimed
-    KES 2,800,000. Settled KES 2,400,000.
+  - May 2024: Surface-water ingress after blocked drain; claimed KES 4,200,000;
+    settled KES 3,600,000.
+  - November 2025: Storm water under loading-bay doors; claimed KES 6,800,000;
+    settled KES 5,900,000.
   - No other claims declared in the preceding 5 years.
 
 7. INSURED'S DECLARATION
@@ -75,15 +77,17 @@ I confirm that the information given above is true to the best of my knowledge.
 I understand that the Insurer's liability is subject to the terms, conditions,
 exclusions and warranties of the Policy.
 
-Signed: J. Wanjiru (Finance Director, Mavuno Textiles Limited)
-Date: 5 August 2026
+Signed: D. Mwangi (Operations Director, Kariobangi Cold Storage & Logistics Limited)
+Date: 16 April 2026
 
 8. INTERNAL NOTE - AMANI GENERAL INSURANCE CLAIMS DEPARTMENT
 
-Given the estimated gross loss of KES 85,000,000, this claim falls above the
-Cedant's retention of KES 50,000,000 under Treaty KR/AGI/SUR/2026 and has been
-notified to Kenya Reinsurance Corporation Limited on 6 August 2026, within the
-14-day notification period. Fire investigation report and sprinkler system
-maintenance records are outstanding and have been requested from the Insured.
-Cause of the fire (accidental electrical/mechanical fault vs. other cause) is not
-yet confirmed pending the independent investigation report.
+Given the estimated gross loss of KES 92,000,000, this claim falls above the
+Cedant's retention of KES 50,000,000 under Treaty KR/AGI/FLD/SUR/2026 and has been
+notified to Kenya Reinsurance Corporation Limited on 17 April 2026, within the
+14-day notification period. Flood investigation report and drainage-maintenance
+records are outstanding. Applicability of Warranty 1 (drainage) and Warranty 2
+(elevated storage / flood mark) is not yet confirmed. Underwriting file notes that
+this risk is an Enhanced Assessment Risk under Article 3 (sum insured and Kariobangi
+hotspot corridor). Portfolio CAT desk shows Eastlands locations with elevated
+susceptibility under moderate-to-severe return-period tiers for the same catchment.

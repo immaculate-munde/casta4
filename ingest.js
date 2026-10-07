@@ -14,7 +14,7 @@ const txtPaths = [
   "./docs/01_policy.txt",
   "./docs/02_reinsurance_treaty.txt",
   "./docs/03_claim_form.txt",
-  "./docs/04_fire_investigation_report.txt"
+  "./docs/04_flood_investigation_report.txt"
 ];
 
 const VECTOR_STORE_PATH = "./vector_store";
@@ -69,10 +69,20 @@ async function main() {
 
   // 2. Smart splitting for legal documents
   console.log("\n✂️  Splitting documents into structured chunks...");
+  // Prefer keeping treaty articles / policy sections intact for retrieval
   const splitter = new RecursiveCharacterTextSplitter({
-    chunkSize: 700,
-    chunkOverlap: 100,
-    separators: ["\nSection ", "\nPART ", "\nCHAPTER ", "\n\n", ". "]
+    chunkSize: 1400,
+    chunkOverlap: 200,
+    separators: [
+      "\nARTICLE ",
+      "\nSECTION ",
+      "\nSection ",
+      "\nWarranty ",
+      "\n\n",
+      "\n",
+      ". ",
+      " ",
+    ],
   });
 
   const splitDocs = await splitter.splitDocuments(allDocs);
