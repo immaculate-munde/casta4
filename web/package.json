@@ -8,9 +8,13 @@
     "start": "next start -p 3000"
   },
   "dependencies": {
+    "@tailwindcss/postcss": "^4.3.3",
     "maplibre-gl": "^6.13.0",
     "next": "^15.1.6",
+    "postcss": "^8.5.29",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "react-markdown": "^10.1.0",
+    "tailwindcss": "^4.3.3"
   }
 }

@@ -1,70 +1,49 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useRef, useState } from 'react';
-import { askClaims } from '@/lib/api';
-import '@/styles/chat.css';
+import { useState } from 'react';
+import ReAgentBotLauncher from '@/components/ReAgentBotLauncher';
+import UnderwriterChat from '@/components/UnderwriterChat';
 
 export default function ClaimsChat() {
-  const [messages, setMessages] = useState([
-    { role: 'bot', text: 'ReAgent AI — ask about treaty referral, coverage, or claim documentation.' },
-  ]);
-  const [input, setInput] = useState('');
-  const [loading, setLoading] = useState(false);
-  const endRef = useRef(null);
-
-  useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, loading]);
-
-  async function onSubmit(e) {
-    e.preventDefault();
-    const text = input.trim();
-    if (!text || loading) return;
-    setInput('');
-    setMessages((m) => [...m, { role: 'user', text }]);
-    setLoading(true);
-    try {
-      const answer = await askClaims(text);
-      setMessages((m) => [...m, { role: 'bot', text: answer }]);
-    } catch (err) {
-      setMessages((m) => [
-        ...m,
-        { role: 'bot', text: `Could not reach RAG API (${err.message}). Run node rag-server.js on port 3001.` },
-      ]);
-    } finally {
-      setLoading(false);
-    }
-  }
+  const [started, setStarted] = useState(false);
 
   return (
-    <div className="chat-root">
-      <header className="chat-header">
-        <Link href="/">← Home</Link>
-        <span>ReAgent AI · Claims</span>
-        <Link href="/catastrophe">Flood desk</Link>
+    <div className="flex min-h-screen flex-col bg-kenya-surface font-sans text-[#1c2430]">
+      <header className="flex items-center justify-between border-b border-kenya-line bg-white px-4 py-3">
+        <Link href="/" className="font-semibold text-kenya-blue hover:underline">
+          ← Home
+        </Link>
+        <span className="text-sm font-semibold text-kenya-navy">ReAgent AI · Underwriter chat</span>
+        <Link href="/catastrophe" className="text-sm font-semibold text-kenya-blue hover:underline">
+          Flood desk
+        </Link>
       </header>
-      <main className="chat-main">
-        <div className="chat-box">
-          {messages.map((msg, i) => (
-            <div key={i} className={`chat-msg ${msg.role}`}>
-              {msg.text}
-            </div>
-          ))}
-          {loading ? <div className="chat-msg bot">…</div> : null}
-          <div ref={endRef} />
-        </div>
-        <form className="chat-form" onSubmit={onSubmit}>
-          <input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
+
+      <main className="relative mx-auto flex w-full max-w-3xl flex-1 flex-col px-4 py-6 pb-28">
+        {!started ? (
+          <section className="flex flex-1 flex-col justify-center py-8">
+            <h1 className="font-serif text-2xl font-bold tracking-tight text-kenya-navy">Underwriter chat</h1>
+            <p className="mt-3 max-w-lg text-sm leading-relaxed text-kenya-muted">
+              Hover the ReAgent assistant in the bottom-right corner, then click to start. You&apos;ll get coverage,
+              treaty, and claim answers with short source tags on each reply.
+            </p>
+            <p className="mt-6 text-xs text-kenya-muted">
+              Tip: the same agent appears on the dashboard and flood desk — click it anytime to open this chat.
+            </p>
+          </section>
+        ) : (
+          <UnderwriterChat
+            className="min-h-[480px] flex-1 overflow-hidden rounded-xl border border-kenya-line bg-white shadow-sm"
+            title="ReAgent AI"
+            hint="Each reply lists ingested sources (Policy · Treaty · Claim · Report)."
             placeholder="e.g. What does the treaty say about claim referral?"
-            disabled={loading}
           />
-          <button type="submit" disabled={loading}>
-            Send
-          </button>
-        </form>
+        )}
+
+        {!started ? (
+          <ReAgentBotLauncher onActivate={() => setStarted(true)} />
+        ) : null}
       </main>
     </div>
   );

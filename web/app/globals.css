@@ -1,3 +1,60 @@
+@import url('https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600&display=swap');
+@import 'tailwindcss';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --app-ink: #121820;
+  --app-navy: #0f2d52;
+  --app-blue: #1a4a8a;
+  --app-surface: #eef1f5;
+  --app-panel: #ffffff;
+  --app-line: #a8b0bc;
+  --app-muted: #3d4654;
+  --chat-bg: #f8f9fa;
+  --chat-panel: #ffffff;
+  --chat-sidebar: #f1f3f4;
+  --chat-border: #9aa0a6;
+  --chat-text: #121820;
+  --chat-text-muted: #3d4654;
+  --chat-user-bubble: #e8eef8;
+  color-scheme: light;
+}
+
+.dark {
+  --app-ink: #e8eaed;
+  --app-navy: #aecbfa;
+  --app-blue: #8ab4f8;
+  --app-surface: #0f1114;
+  --app-panel: #1a1d21;
+  --app-line: #3c4043;
+  --app-muted: #bdc1c6;
+  --chat-bg: #0f0f10;
+  --chat-panel: #17181a;
+  --chat-sidebar: #17181a;
+  --chat-border: #80868b;
+  --chat-text: #f1f3f4;
+  --chat-text-muted: #dadce0;
+  --chat-user-bubble: #394457;
+  color-scheme: dark;
+}
+
+@theme {
+  --color-kenya-ink: var(--app-ink);
+  --color-kenya-navy: var(--app-navy);
+  --color-kenya-blue: var(--app-blue);
+  --color-kenya-red: #b01830;
+  --color-kenya-coral: #c93434;
+  --color-kenya-watch: #7a5a18;
+  --color-kenya-green: #156b47;
+  --color-kenya-surface: var(--app-surface);
+  --color-kenya-panel: var(--app-panel);
+  --color-kenya-line: var(--app-line);
+  --color-kenya-muted: var(--app-muted);
+  --font-sans: 'Public Sans', 'Segoe UI', system-ui, sans-serif;
+  --font-serif: 'Source Serif 4', Georgia, serif;
+}
+
 *, *::before, *::after { box-sizing: border-box; }
 
 html, body {
@@ -9,8 +66,9 @@ html, body {
 }
 
 body {
-  background: #f3f5f8;
-  color: #1c2430;
+  background: var(--app-surface);
+  color: var(--app-ink);
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 a { color: inherit; text-decoration: none; }
@@ -21,3 +79,26 @@ button, input, textarea, select {
   font: inherit;
   color: inherit;
 }
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--app-blue);
+  outline-offset: 2px;
+}
+
+/* MapLibre (flood desk) */
+.maplibregl-popup-content {
+  font-family: var(--font-sans, 'Public Sans', sans-serif);
+  font-size: 12px;
+  padding: 8px 10px;
+  border-radius: 0;
+  box-shadow: 0 2px 8px rgba(23, 56, 106, 0.18);
+  border: 1px solid var(--app-line);
+  line-height: 1.5;
+}
+.maplibregl-popup-tip { display: none; }
+.maplibregl-ctrl-attrib { font-size: 10px; }
+.maplibregl-ctrl-group { border-radius: 0 !important; }
