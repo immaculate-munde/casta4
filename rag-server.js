@@ -10,6 +10,7 @@ import fs from 'fs/promises';
 import { parse } from 'csv-parse/sync';
 
 import { cleanLlmAnswer } from './lib/clean-llm-answer.js';
+import { formatRetrievalResults } from './lib/rag-retrieval.js';
 import nairobiRouter from './lib/nairobi-routes.js';
 import { loadPortfolio, computePortfolioSummary, computeLossCurve } from './lib/nairobi-flood-cat.js';
 
@@ -155,11 +156,8 @@ async function runRag(question) {
     throw err;
   }
 
-  const results = await vectorStore.similaritySearch(question, 8);
-  const context = results.map((doc, i) => {
-    const source = doc.metadata?.source ? ` (${doc.metadata.source})` : '';
-    return `Context #${i + 1}${source}:\n${doc.pageContent}`;
-  });
+  const results = await vectorStore.similaritySearch(question, 6);
+  const { context, sources } = formatRetrievalResults(results);
 
   const prompt = `Retrieved context:\n${context.join('\n\n')}\n\nUser question: ${question}\n\nAnswer:`;
   const messages = [
@@ -168,7 +166,7 @@ async function runRag(question) {
   ];
 
   const answer = await callGroq(messages);
-  return { context, answer };
+  return { context, sources, answer };
 }
 
 async function handleRag(req, res) {
@@ -178,8 +176,8 @@ async function handleRag(req, res) {
   }
 
   try {
-    const { context, answer } = await runRag(question.trim());
-    res.json({ context, answer });
+    const { context, answer, sources } = await runRag(question.trim());
+    res.json({ context, answer, sources: sources || [] });
   } catch (err) {
     console.error('RAG error:', err.details || err.message || err);
     res.status(err.status || 500).json({
