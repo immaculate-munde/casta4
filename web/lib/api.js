@@ -2,6 +2,8 @@ export function ragApiBase() {
   if (typeof window !== 'undefined') {
     const q = new URLSearchParams(window.location.search).get('api');
     if (q) return q.replace(/\/$/, '');
+    // Same-origin proxy via next.config rewrites (avoids CORS; still needs rag-server on 3001)
+    return '';
   }
   return (process.env.NEXT_PUBLIC_RAG_API_URL || 'http://localhost:3001').replace(/\/$/, '');
 }
@@ -17,7 +19,8 @@ export async function fetchRagJson(path) {
 
 export async function askClaims(question, context = []) {
   const base = ragApiBase();
-  const res = await fetch(`${base}/ask`, {
+  const path = base ? `${base}/ask` : '/api/rag/ask';
+  const res = await fetch(path, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ question, context }),
