@@ -2,8 +2,9 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import SignOutButton from '@/components/SignOutButton';
+import ThemeToggle from '@/components/ThemeToggle';
 import { fetchRagJson } from '@/lib/api';
-import '@/styles/dashboard.css';
 
 const kes = new Intl.NumberFormat('en-KE', {
   style: 'currency',
@@ -22,19 +23,25 @@ const pct = new Intl.NumberFormat('en-KE', {
 });
 
 function StatusBadge({ status }) {
-  const map = {
-    Settled: 'badge-settled',
-    Open: 'badge-open',
-    'Under Review': 'badge-review',
+  const styles = {
+    Settled: 'bg-[#e4f5ee] text-kenya-green',
+    Open: 'bg-[#e8eef8] text-kenya-blue',
+    'Under Review': 'bg-[#fdf4e3] text-kenya-watch',
   };
-  return <span className={`badge ${map[status] || 'badge-open'}`}>{status}</span>;
+  return (
+    <span
+      className={`inline-block rounded-sm px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide ${styles[status] || styles.Open}`}
+    >
+      {status}
+    </span>
+  );
 }
 
 function Sparkbar({ value, max, colour }) {
   const w = max > 0 ? Math.max(4, (value / max) * 100) : 4;
   return (
-    <span className="sparkbar-wrap">
-      <span className="sparkbar-fill" style={{ width: `${w}%`, background: colour }} />
+    <span className="mt-1 block h-1.5 w-full bg-kenya-line">
+      <span className="block h-full transition-all" style={{ width: `${w}%`, background: colour }} />
     </span>
   );
 }
@@ -51,267 +58,286 @@ export default function Dashboard() {
 
   const claims = data?.claims;
   const flood = data?.flood;
-
-  const maxHousingTiv = flood
-    ? Math.max(...(flood.by_housing || []).map((h) => h.tiv_kes))
-    : 1;
+  const maxHousingTiv = flood ? Math.max(...(flood.by_housing || []).map((h) => h.tiv_kes)) : 1;
 
   return (
-    <div className="dash-root">
-      {/* ── Top nav ── */}
-      <header className="dash-nav">
-        <div className="dash-nav-brand">
-          <span className="dash-nav-ribbon" aria-hidden="true" />
-          <span className="dash-nav-name">Kenya Re</span>
-          <span className="dash-nav-sub">ReAgent AI</span>
+    <div className="min-h-screen bg-kenya-surface text-sm text-kenya-ink">
+      <header className="sticky top-0 z-50 flex h-14 items-center justify-between border-b-[3px] border-kenya-coral bg-kenya-navy px-6">
+        <div className="flex items-center gap-2.5">
+          <span className="inline-block h-5 w-2 shrink-0 bg-kenya-coral" aria-hidden />
+          <span className="font-serif text-xl font-semibold tracking-tight text-white">Kenya Re</span>
+          <span className="border-l border-white/35 pl-2.5 text-xs font-medium text-white/85">ReAgent AI</span>
         </div>
-        <nav className="dash-nav-links">
-          <Link href="/catastrophe">Flood desk</Link>
-          <Link href="/chat" className="dash-nav-cta">Claims chat →</Link>
+        <nav className="flex items-center gap-4 text-sm font-medium text-white/90">
+          <Link href="/" className="hover:text-white">
+            Home
+          </Link>
+          <Link href="/catastrophe" className="hover:text-white">
+            Flood desk
+          </Link>
+          <ThemeToggle variant="onDark" />
+          <SignOutButton className="text-xs text-white/80 hover:text-white" />
         </nav>
       </header>
 
-      <div className="dash-body">
-        {/* ── Page title ── */}
-        <div className="dash-title-row">
+      <div className="mx-auto max-w-7xl px-6 py-6">
+        <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h1 className="dash-h1">Operations Dashboard</h1>
-            <p className="dash-subtitle">
+            <h1 className="font-serif text-3xl font-semibold tracking-tight text-kenya-navy">Operations Dashboard</h1>
+            <p className="mt-1 text-kenya-muted">
               Kenya Re · Reinsurance claims & catastrophe risk · Synthetic data
             </p>
           </div>
-          <div className="dash-status-pill">
-            <span className="dash-status-dot" />
+          <div className="flex items-center gap-2 rounded-full border border-kenya-line bg-kenya-panel px-3 py-1 text-xs font-semibold text-kenya-green">
+            <span className="h-2 w-2 rounded-full bg-kenya-green" />
             Live
           </div>
         </div>
 
-        {error && (
-          <div className="dash-error">
-            ⚠ Could not reach backend — start <code>node rag-server.js</code> on port 3001.
+        {error ? (
+          <div className="mb-6 rounded-sm border border-[#f0c0c0] bg-[#fdeaea] px-4 py-3 text-[#8a1f1f]">
+            ⚠ Could not reach backend — start <code className="font-mono text-xs">node rag-server.js</code> on port
+            3001.
             <br />
-            <small>{error}</small>
+            <small className="opacity-80">{error}</small>
           </div>
-        )}
+        ) : null}
 
-        {/* ── KPI row ── */}
-        <section className="dash-kpi-row">
-          <div className="kpi-card">
-            <span className="kpi-label">Total Claims</span>
-            <span className="kpi-value">{claims ? claims.total_claims : '—'}</span>
-            <span className="kpi-sub">{claims ? `${claims.settled} settled` : 'loading…'}</span>
-          </div>
-          <div className="kpi-card kpi-accent">
-            <span className="kpi-label">Total Claimed</span>
-            <span className="kpi-value">{claims ? kes.format(claims.total_claimed_kes) : '—'}</span>
-            <span className="kpi-sub">{claims ? `${kes.format(claims.total_settled_kes)} settled` : 'loading…'}</span>
-          </div>
-          <div className="kpi-card kpi-warn">
-            <span className="kpi-label">Flagged for Review</span>
-            <span className="kpi-value">{claims ? claims.flagged_for_review : '—'}</span>
-            <span className="kpi-sub">anomaly indicators</span>
-          </div>
-          <div className="kpi-card">
-            <span className="kpi-label">Portfolio TIV</span>
-            <span className="kpi-value">{flood ? kes.format(flood.total_tiv_kes) : '—'}</span>
-            <span className="kpi-sub">{flood ? `${flood.location_count} locations` : 'loading…'}</span>
-          </div>
-          <div className="kpi-card kpi-flood">
-            <span className="kpi-label">Moderate Flood Loss</span>
-            <span className="kpi-value">{flood ? kes.format(flood.moderate_loss_kes) : '—'}</span>
-            <span className="kpi-sub">1-in-25 yr scenario</span>
-          </div>
+        <section className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          {[
+            {
+              label: 'Total Claims',
+              value: claims ? claims.total_claims : '—',
+              sub: claims ? `${claims.settled} settled` : 'loading…',
+              accent: '',
+            },
+            {
+              label: 'Total Claimed',
+              value: claims ? kes.format(claims.total_claimed_kes) : '—',
+              sub: claims ? `${kes.format(claims.total_settled_kes)} settled` : 'loading…',
+              accent: 'border-l-4 border-l-kenya-blue',
+            },
+            {
+              label: 'Flagged for Review',
+              value: claims ? claims.flagged_for_review : '—',
+              sub: 'anomaly indicators',
+              accent: 'border-l-4 border-l-kenya-watch',
+            },
+            {
+              label: 'Portfolio TIV',
+              value: flood ? kes.format(flood.total_tiv_kes) : '—',
+              sub: flood ? `${flood.location_count} locations` : 'loading…',
+              accent: '',
+            },
+            {
+              label: 'Moderate Flood Loss',
+              value: flood ? kes.format(flood.moderate_loss_kes) : '—',
+              sub: '1-in-25 yr scenario',
+              accent: 'border-l-4 border-l-kenya-coral',
+            },
+          ].map((kpi) => (
+            <div
+              key={kpi.label}
+              className={`rounded-sm border-2 border-kenya-line bg-kenya-panel p-4 shadow-sm ${kpi.accent}`}
+            >
+              <span className="text-[10px] font-bold uppercase tracking-wider text-kenya-ink/70">{kpi.label}</span>
+              <div className="mt-1 font-serif text-2xl font-semibold text-kenya-navy">{kpi.value}</div>
+              <span className="text-xs text-kenya-muted">{kpi.sub}</span>
+            </div>
+          ))}
         </section>
 
-        {/* ── Main grid ── */}
-        <div className="dash-grid">
-
-          {/* Current claim spotlight */}
-          <section className="dash-card dash-card-spotlight">
-            <div className="card-head">
-              <h2>Active Claim</h2>
+        <div className="grid gap-4 lg:grid-cols-12">
+          <section className="rounded-sm border border-kenya-line bg-kenya-panel p-5 shadow-sm lg:col-span-4">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="font-serif text-lg font-semibold text-kenya-navy">Active Claim</h2>
               <StatusBadge status={claims?.current_claim?.status || 'Open'} />
             </div>
             {claims?.current_claim ? (
               <>
-                <p className="spotlight-id">{claims.current_claim.claim_id}</p>
-                <p className="spotlight-insured">{claims.current_claim.insured}</p>
-                <div className="spotlight-amount">
+                <p className="font-mono text-xs text-kenya-muted">{claims.current_claim.claim_id}</p>
+                <p className="mt-1 font-semibold">{claims.current_claim.insured}</p>
+                <div className="my-3 font-serif text-3xl font-semibold text-kenya-navy">
                   {kesLong.format(claims.current_claim.claimed_amount_kes)}
                 </div>
-                <dl className="spotlight-fields">
+                <dl className="grid grid-cols-2 gap-3 border-t border-kenya-line pt-3 text-xs">
                   <div>
-                    <dt>Peril</dt>
-                    <dd>{claims.current_claim.peril}</dd>
+                    <dt className="text-kenya-muted">Peril</dt>
+                    <dd className="font-semibold">{claims.current_claim.peril}</dd>
                   </div>
                   <div>
-                    <dt>Cause</dt>
-                    <dd className={claims.current_claim.cause_confirmed === 'Open - current claim' ? 'text-warn' : ''}>
+                    <dt className="text-kenya-muted">Cause</dt>
+                    <dd
+                      className={`font-semibold ${claims.current_claim.cause_confirmed === 'Open - current claim' ? 'text-kenya-watch' : ''}`}
+                    >
                       {claims.current_claim.cause_confirmed || 'Under investigation'}
                     </dd>
                   </div>
                 </dl>
-                <Link href="/chat" className="spotlight-cta">
-                  Assess with ReAgent AI →
-                </Link>
+                <p className="mt-4 text-sm text-kenya-muted">
+                  Use the <strong className="text-kenya-navy">ReAgent bot</strong> (bottom-right) for document Q&amp;A.
+                </p>
               </>
             ) : (
-              <p className="dash-empty">Loading claim data…</p>
+              <p className="text-kenya-muted">{error ? 'Backend offline' : 'Loading claim data…'}</p>
             )}
           </section>
 
-          {/* Recent claims table */}
-          <section className="dash-card dash-card-wide">
-            <div className="card-head">
-              <h2>Recent Claims</h2>
-              <Link href="/chat" className="card-head-link">View all →</Link>
+          <section className="overflow-hidden rounded-sm border border-kenya-line bg-kenya-panel shadow-sm lg:col-span-8">
+            <div className="flex items-center justify-between border-b border-kenya-line px-5 py-3">
+              <h2 className="font-serif text-lg font-semibold text-kenya-navy">Recent Claims</h2>
+              <span className="text-xs text-kenya-muted">ReAgent bot →</span>
             </div>
-            <table className="dash-table">
-              <thead>
-                <tr>
-                  <th>Claim ID</th>
-                  <th>Insured</th>
-                  <th>Peril</th>
-                  <th>Claimed</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {claims?.recent_claims?.length ? (
-                  claims.recent_claims.map((c) => (
-                    <tr key={c.claim_id}>
-                      <td className="td-id">{c.claim_id}</td>
-                      <td>{c.insured}</td>
-                      <td>{c.peril}</td>
-                      <td className="td-num">{kes.format(c.claimed_amount_kes)}</td>
-                      <td><StatusBadge status={c.status} /></td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={5} className="dash-empty">
-                      {error ? 'Backend offline' : 'Loading…'}
-                    </td>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[520px] border-collapse text-left">
+                <thead>
+                  <tr className="border-b border-kenya-line bg-[#f8f9fb] text-[10px] font-bold uppercase tracking-wider text-kenya-muted">
+                    <th className="px-4 py-2">Claim ID</th>
+                    <th className="px-4 py-2">Insured</th>
+                    <th className="px-4 py-2">Peril</th>
+                    <th className="px-4 py-2">Claimed</th>
+                    <th className="px-4 py-2">Status</th>
                   </tr>
-                )}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {claims?.recent_claims?.length ? (
+                    claims.recent_claims.map((c) => (
+                      <tr key={c.claim_id} className="border-b border-kenya-line last:border-0">
+                        <td className="px-4 py-2.5 font-mono text-xs">{c.claim_id}</td>
+                        <td className="px-4 py-2.5">{c.insured}</td>
+                        <td className="px-4 py-2.5">{c.peril}</td>
+                        <td className="px-4 py-2.5 text-right font-semibold tabular-nums">{kes.format(c.claimed_amount_kes)}</td>
+                        <td className="px-4 py-2.5">
+                          <StatusBadge status={c.status} />
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={5} className="px-4 py-8 text-center text-kenya-muted">
+                        {error ? 'Backend offline' : 'Loading…'}
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </section>
 
-          {/* Flood risk top locations */}
-          <section className="dash-card">
-            <div className="card-head">
-              <h2>Top Flood Risk Locations</h2>
-              <Link href="/catastrophe" className="card-head-link">Open map →</Link>
+          <section className="rounded-sm border border-kenya-line bg-kenya-panel p-5 shadow-sm lg:col-span-4">
+            <div className="mb-1 flex items-center justify-between">
+              <h2 className="font-serif text-lg font-semibold text-kenya-navy">Top Flood Risk Locations</h2>
+              <Link href="/catastrophe" className="text-xs font-semibold text-kenya-blue hover:underline">
+                Open map →
+              </Link>
             </div>
-            <p className="card-meta">Moderate scenario (1-in-25 yr)</p>
-            <div className="risk-list">
+            <p className="mb-3 text-xs text-kenya-muted">Moderate scenario (1-in-25 yr)</p>
+            <div className="space-y-2">
               {flood?.top_risk_locations?.length ? (
                 flood.top_risk_locations.map((loc, i) => (
-                  <div key={loc.loc_id} className="risk-item">
-                    <span className="risk-rank">{i + 1}</span>
-                    <div className="risk-info">
-                      <strong>{loc.loc_id}</strong>
-                      <span>{loc.housing_label}</span>
+                  <div
+                    key={loc.loc_id}
+                    className="flex items-center gap-3 border-b border-kenya-line py-2 last:border-0"
+                  >
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center bg-kenya-navy text-[10px] font-bold text-white">
+                      {i + 1}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <strong className="block text-xs">{loc.loc_id}</strong>
+                      <span className="text-[11px] text-kenya-muted">{loc.housing_label}</span>
                     </div>
-                    <div className="risk-metrics">
-                      <span className="risk-hazard-pct risk-high">
-                        {Math.round(loc.hazard * 100)}%
-                      </span>
-                      <span className="risk-loss">{kes.format(loc.loss_kes)}</span>
+                    <div className="text-right text-xs">
+                      <span className="font-bold text-kenya-coral">{Math.round(loc.hazard * 100)}%</span>
+                      <span className="block text-kenya-muted">{kes.format(loc.loss_kes)}</span>
                     </div>
                   </div>
                 ))
               ) : (
-                <p className="dash-empty">{error ? 'Backend offline' : 'Loading…'}</p>
+                <p className="text-kenya-muted">{error ? 'Backend offline' : 'Loading…'}</p>
               )}
             </div>
           </section>
 
-          {/* Portfolio by housing class */}
-          <section className="dash-card">
-            <div className="card-head">
-              <h2>Exposure by Construction</h2>
-            </div>
-            <p className="card-meta">Share of total insured value</p>
-            <div className="housing-list">
+          <section className="rounded-sm border border-kenya-line bg-kenya-panel p-5 shadow-sm lg:col-span-4">
+            <h2 className="font-serif text-lg font-semibold text-kenya-navy">Exposure by Construction</h2>
+            <p className="mb-3 text-xs text-kenya-muted">Share of total insured value</p>
+            <div className="space-y-3">
               {flood?.by_housing?.length ? (
                 flood.by_housing.map((h) => (
-                  <div key={h.housing_class} className="housing-row">
-                    <div className="housing-label-row">
-                      <span>{h.label}</span>
-                      <span className="housing-count">{h.count} locations</span>
-                      <span className="housing-tiv">{kes.format(h.tiv_kes)}</span>
+                  <div key={h.housing_class}>
+                    <div className="flex flex-wrap items-baseline justify-between gap-1 text-xs">
+                      <span className="font-semibold">{h.label}</span>
+                      <span className="text-kenya-muted">{h.count} locations</span>
+                      <span className="font-semibold tabular-nums">{kes.format(h.tiv_kes)}</span>
                     </div>
                     <Sparkbar
                       value={h.tiv_kes}
                       max={maxHousingTiv}
                       colour={
-                        h.housing_class === 'informal_iron_sheet' ? '#e24b4b'
-                        : h.housing_class === 'semi_permanent' ? '#c4a15a'
-                        : '#2457a6'
+                        h.housing_class === 'informal_iron_sheet'
+                          ? '#e24b4b'
+                          : h.housing_class === 'semi_permanent'
+                            ? '#c4a15a'
+                            : '#2457a6'
                       }
                     />
                   </div>
                 ))
               ) : (
-                <p className="dash-empty">{error ? 'Backend offline' : 'Loading…'}</p>
+                <p className="text-kenya-muted">{error ? 'Backend offline' : 'Loading…'}</p>
               )}
             </div>
           </section>
 
-          {/* Claims status breakdown */}
-          <section className="dash-card">
-            <div className="card-head">
-              <h2>Claims by Status</h2>
-            </div>
+          <section className="rounded-sm border border-kenya-line bg-kenya-panel p-5 shadow-sm lg:col-span-4">
+            <h2 className="mb-4 font-serif text-lg font-semibold text-kenya-navy">Claims by Status</h2>
             {claims ? (
-              <div className="status-breakdown">
+              <div className="space-y-3">
                 {[
-                  { label: 'Settled', value: claims.settled, cls: 'bar-settled' },
-                  { label: 'Open', value: claims.open, cls: 'bar-open' },
-                  { label: 'Under Review', value: claims.under_review, cls: 'bar-review' },
+                  { label: 'Settled', value: claims.settled, bar: 'bg-kenya-green' },
+                  { label: 'Open', value: claims.open, bar: 'bg-kenya-blue' },
+                  { label: 'Under Review', value: claims.under_review, bar: 'bg-kenya-watch' },
                 ].map((item) => (
-                  <div key={item.label} className="status-row">
-                    <span className="status-label">{item.label}</span>
-                    <div className="status-bar-wrap">
+                  <div key={item.label} className="grid grid-cols-[88px_1fr_28px] items-center gap-2 text-xs">
+                    <span className="text-kenya-muted">{item.label}</span>
+                    <div className="h-2 bg-kenya-line">
                       <div
-                        className={`status-bar ${item.cls}`}
+                        className={`h-full ${item.bar}`}
                         style={{ width: `${(item.value / claims.total_claims) * 100}%` }}
                       />
                     </div>
-                    <span className="status-count">{item.value}</span>
+                    <span className="text-right font-semibold tabular-nums">{item.value}</span>
                   </div>
                 ))}
-                <p className="status-ratio">
+                <p className="border-t border-kenya-line pt-3 text-xs text-kenya-muted">
                   Settlement ratio:{' '}
-                  <strong>
+                  <strong className="text-kenya-navy">
                     {pct.format(claims.total_settled_kes / claims.total_claimed_kes)}
                   </strong>
                 </p>
               </div>
             ) : (
-              <p className="dash-empty">{error ? 'Backend offline' : 'Loading…'}</p>
+              <p className="text-kenya-muted">{error ? 'Backend offline' : 'Loading…'}</p>
             )}
           </section>
 
-          {/* Severe flood loss card */}
-          <section className="dash-card dash-card-flood-warn">
-            <div className="card-head">
-              <h2>Severe Flood Scenario</h2>
-              <span className="badge badge-warn-sm">1-in-100 yr</span>
+          <section className="rounded-sm border border-kenya-watch/40 bg-[#fdf4e3] p-5 shadow-sm lg:col-span-4">
+            <div className="mb-2 flex items-center justify-between">
+              <h2 className="font-serif text-lg font-semibold text-kenya-navy">Severe Flood Scenario</h2>
+              <span className="rounded-sm bg-kenya-watch px-2 py-0.5 text-[10px] font-bold uppercase text-white">
+                1-in-100 yr
+              </span>
             </div>
-            <div className="flood-warn-amount">
+            <div className="font-serif text-3xl font-semibold text-kenya-navy">
               {flood ? kes.format(flood.severe_loss_kes) : '—'}
             </div>
-            <p className="flood-warn-sub">
+            <p className="mt-1 text-xs text-kenya-muted">
               Estimated portfolio ground-up loss · {flood ? flood.location_count : '—'} Nairobi locations
             </p>
-            <Link href="/catastrophe" className="flood-warn-cta">
+            <Link href="/catastrophe" className="mt-4 inline-block text-sm font-bold text-kenya-navy hover:underline">
               Model full scenario →
             </Link>
           </section>
-
         </div>
       </div>
     </div>
