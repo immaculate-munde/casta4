@@ -56,7 +56,13 @@ cp .env.example .env.local   # set NEXT_PUBLIC_RAG_API_URL=http://localhost:3001
 npm install
 npm run dev
 ```
-Open **http://localhost:3000/catastrophe** (flood desk) or **/chat** (claims). Legacy static UI remains in `public/`.
+Open **http://localhost:3000** (landing) → **Sign in** → role-based workspace (**/dashboard** or **/catastrophe**). Use the **ReAgent bot** (bottom-right) on any page to open document chat. Legacy static UI remains in `public/`.
+
+**Another region (dynamic CAT data):** point the API at a CSV folder with env vars (restart `rag-server.js`):
+
+- `CAT_DATA_DIR` — folder containing exposure + hotspots CSVs  
+- `CAT_EXPOSURE_CSV` / `CAT_HOTSPOTS_CSV` — filenames inside that folder  
+- `CAT_REGION_ID` / `CAT_REGION_LABEL` / `CAT_PERIL_LABEL` — labels returned in `/api/nairobi/meta`
 
 ### Deploying Netlify Functions
 - Functions are in `netlify/functions/` and auto-deployed by Netlify.
