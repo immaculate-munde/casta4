@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import EpLossLineChart from '@/components/EpLossLineChart';
 import SignOutButton from '@/components/SignOutButton';
 import ThemeToggle from '@/components/ThemeToggle';
 import { useChatDrawer } from '@/components/ChatDrawerProvider';
@@ -455,6 +456,7 @@ export default function CatastropheDesk() {
     locations.length > 0 ? locations.reduce((s, r) => s + (r.hazard || 0), 0) / locations.length : 0;
   const openRow = openId ? locations.find((r) => r.loc_id === openId) : null;
   const tierPortfolioLoss = lossCurve?.points?.find((p) => p.tier === activeTier)?.portfolio_loss_kes;
+  const activeReturnPeriodYears = lossCurve?.points?.find((p) => p.tier === activeTier)?.return_period_years;
 
   const bookBadge =
     'mt-1 inline-block w-fit border px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide';
@@ -612,17 +614,12 @@ export default function CatastropheDesk() {
                 ? `${epNote.label}: ${kes.format(epNote.portfolio_loss_kes)} (${pct.format(epNote.loss_pct_of_tiv)} of TIV)`
                 : 'Portfolio ground-up loss by tier'}
             </p>
-            <div className="grid h-[88px] grid-cols-5 items-end gap-1.5 border-b border-kenya-line">
-              {(lossCurve?.ep_curve || []).map((p) => (
-                <div key={p.return_period_years} className="flex h-full flex-col items-center justify-end gap-1" title={kes.format(p.loss_kes)}>
-                  <b
-                    className="block min-h-[2px] w-full bg-kenya-blue"
-                    style={{ height: `${Math.max(4, (p.loss_kes / maxEp) * 100)}%` }}
-                  />
-                  <em className="text-[9px] not-italic text-kenya-muted">1:{p.return_period_years}y</em>
-                </div>
-              ))}
-            </div>
+            <EpLossLineChart
+              epCurve={lossCurve?.ep_curve}
+              maxLoss={maxEp}
+              activeReturnPeriodYears={activeReturnPeriodYears}
+              formatLoss={(v) => kes.format(v)}
+            />
             <dl className="mt-2 grid gap-1">
               {(lossCurve?.points || []).map((p) => (
                 <div key={p.tier} className="flex justify-between text-[11px]">
