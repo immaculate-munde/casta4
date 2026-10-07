@@ -520,86 +520,9 @@ export default function CatastropheDesk() {
         />
       ) : null}
 
-      <div className="relative flex min-h-0 flex-1 flex-col sm:grid sm:grid-cols-[minmax(200px,38%)_minmax(0,1fr)] sm:grid-rows-1 lg:grid-cols-[250px_minmax(0,1fr)_minmax(300px,360px)]">
-        <main className="relative order-1 min-h-0 min-w-0 flex-1 bg-[#d9dee6] dark:bg-[#2a2d32] sm:order-2 sm:min-h-[400px] lg:order-2">
-          <div ref={mapRef} className="absolute inset-0 h-full w-full" />
-
-          <div className="pointer-events-none absolute inset-x-0 top-0 z-[500] flex gap-2 p-2 sm:hidden">
-            <label className="pointer-events-auto flex min-w-0 flex-1 flex-col gap-0.5">
-              <span className="sr-only">Hazard scenario</span>
-              <select
-                id="tier-select-mobile"
-                className="w-full border border-kenya-line bg-kenya-panel/95 px-2 py-2 text-xs font-semibold shadow-sm backdrop-blur-sm"
-                value={activeTier}
-                onChange={(e) => setActiveTier(e.target.value)}
-              >
-                {(meta?.tiers || [{ id: 'moderate', label: 'Moderate', return_period_years: 25 }]).map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.label} (~1-in-{t.return_period_years} yr)
-                  </option>
-                ))}
-              </select>
-            </label>
-            <button
-              type="button"
-              className="pointer-events-auto shrink-0 rounded-md border border-kenya-line bg-kenya-panel/95 px-3 py-2 text-xs font-bold text-kenya-navy shadow-sm backdrop-blur-sm"
-              onClick={() => setBookPanelOpen(true)}
-            >
-              Locations
-            </button>
-          </div>
-
-          <div className="absolute bottom-20 left-3 right-16 z-[500] flex max-w-[calc(100%-1.5rem)] flex-wrap gap-x-2 gap-y-1 border border-kenya-line bg-kenya-panel/95 px-2 py-1.5 text-[10px] font-medium shadow-sm backdrop-blur-sm sm:bottom-3 sm:right-auto sm:px-3 sm:py-2 sm:text-xs">
-            <span className="inline-flex items-center gap-1">
-              <i className="inline-block h-2 w-2 bg-kenya-coral" aria-hidden /> High
-            </span>
-            <span className="inline-flex items-center gap-1">
-              <i className="inline-block h-2 w-2 bg-kenya-watch" aria-hidden /> Watch
-            </span>
-            <span className="inline-flex items-center gap-1">
-              <i className="inline-block h-2 w-2 bg-[#17386a] dark:bg-kenya-navy" aria-hidden /> Lower
-            </span>
-            <span className="inline-flex items-center gap-1">
-              <i className="inline-block h-2 w-2 border border-white bg-[#6b2d5c]" aria-hidden /> Hotspot
-            </span>
-            <span className="inline-flex items-center gap-1">
-              <i className="inline-block h-2 w-2 rounded-full border-2 border-kenya-coral bg-transparent" aria-hidden /> Book
-            </span>
-          </div>
-          <button
-            className="absolute bottom-[4.75rem] left-3 z-[500] border border-kenya-line bg-kenya-panel/95 px-2.5 py-1 text-xs font-bold tracking-wide text-kenya-navy shadow-sm backdrop-blur-sm hover:bg-kenya-surface sm:bottom-12 sm:px-3 sm:py-1.5"
-            type="button"
-            onClick={() => setPitch3d((v) => !v)}
-            title="Toggle 3D buildings"
-          >
-            {pitch3d ? '2D' : '3D'}
-          </button>
-          <section className="absolute right-3 top-3 z-[500] hidden w-[min(320px,calc(100%-1.5rem))] border border-kenya-line bg-kenya-panel p-3 sm:block">
-            <h3 className="m-0 font-serif text-base font-semibold text-kenya-navy">Exceedance curve</h3>
-            <p className="mt-1 text-[11px] font-medium text-kenya-ink/90">
-              {epNote
-                ? `${epNote.label}: ${kes.format(epNote.portfolio_loss_kes)} (${pct.format(epNote.loss_pct_of_tiv)} of TIV)`
-                : 'Portfolio ground-up loss by tier'}
-            </p>
-            <EpLossLineChart
-              epCurve={lossCurve?.ep_curve}
-              maxLoss={maxEp}
-              activeReturnPeriodYears={activeReturnPeriodYears}
-              formatLoss={(v) => kes.format(v)}
-            />
-            <dl className="mt-2 grid gap-1">
-              {(lossCurve?.points || []).map((p) => (
-                <div key={p.tier} className="flex justify-between text-[11px]">
-                  <dt className={p.tier === activeTier ? 'font-bold text-kenya-navy' : 'text-kenya-muted'}>{p.label}</dt>
-                  <dd className="m-0 font-semibold text-kenya-navy">{kes.format(p.portfolio_loss_kes)}</dd>
-                </div>
-              ))}
-            </dl>
-          </section>
-        </main>
-
+      <div className="relative flex min-h-0 flex-1 flex-col max-sm:overflow-hidden sm:grid sm:grid-cols-[minmax(200px,38%)_minmax(0,1fr)] sm:grid-rows-1 lg:grid-cols-[250px_minmax(0,1fr)_minmax(300px,360px)]">
         <aside
-          className={`order-2 flex min-h-0 flex-col border-kenya-line bg-kenya-panel max-sm:fixed max-sm:inset-x-0 max-sm:bottom-0 max-sm:z-[520] max-sm:max-h-[min(78vh,560px)] max-sm:rounded-t-2xl max-sm:border-t max-sm:shadow-2xl max-sm:transition-transform max-sm:duration-200 sm:order-1 sm:max-h-none sm:border-r sm:transition-none lg:order-1 ${
+          className={`flex min-h-0 flex-col border-kenya-line bg-kenya-panel max-sm:fixed max-sm:inset-x-0 max-sm:bottom-0 max-sm:z-[520] max-sm:max-h-[min(78vh,560px)] max-sm:rounded-t-2xl max-sm:border-t max-sm:shadow-2xl max-sm:transition-transform max-sm:duration-200 sm:max-h-none sm:border-r sm:transition-none ${
             bookPanelOpen ? 'max-sm:translate-y-0' : 'max-sm:pointer-events-none max-sm:translate-y-full'
           }`}
         >
@@ -620,12 +543,12 @@ export default function CatastropheDesk() {
                 ? `${portfolioSummary.location_count} illustrative ${meta?.region_label || 'portfolio'} locations`
                 : `Loading ${meta?.region_label || 'portfolio'} locations…`}
             </p>
-            <label className="mt-3 hidden text-[11px] font-bold uppercase text-kenya-navy sm:block" htmlFor="tier-select">
+            <label className="mt-3 block text-[11px] font-bold uppercase text-kenya-navy" htmlFor="tier-select">
               Hazard scenario
             </label>
             <select
               id="tier-select"
-              className="mt-1 hidden w-full border border-kenya-line bg-kenya-panel px-2 py-2 text-sm sm:block"
+              className="mt-1 w-full border border-kenya-line bg-kenya-panel px-2 py-2 text-sm"
               value={activeTier}
               onChange={(e) => setActiveTier(e.target.value)}
             >
@@ -635,8 +558,16 @@ export default function CatastropheDesk() {
                 </option>
               ))}
             </select>
+            <label className="mt-3 flex cursor-pointer items-center gap-2 text-xs font-semibold text-kenya-ink">
+              <input
+                type="checkbox"
+                checked={bookOnly}
+                onChange={(e) => setBookOnly(e.target.checked)}
+              />
+              Kenya Re treaty book only
+            </label>
           </div>
-          <label className="flex shrink-0 cursor-pointer items-center gap-2 border-b border-kenya-line px-4 py-3 text-xs font-semibold text-kenya-ink">
+          <label className="flex shrink-0 cursor-pointer items-center gap-2 border-b border-kenya-line px-4 py-3 text-xs font-semibold text-kenya-ink sm:hidden">
             <input
               type="checkbox"
               checked={bookOnly}
@@ -688,6 +619,100 @@ export default function CatastropheDesk() {
             ) : null}
           </div>
         </aside>
+
+        <main className="relative min-h-0 min-w-0 max-sm:flex-1 bg-[#d9dee6] dark:bg-[#2a2d32]">
+          <div ref={mapRef} className="absolute inset-0 h-full w-full sm:relative sm:min-h-[400px]" />
+
+          <div className="pointer-events-none absolute inset-x-0 top-0 z-[500] flex gap-2 p-2 sm:hidden">
+            <label className="pointer-events-auto flex min-w-0 flex-1 flex-col gap-0.5">
+              <span className="sr-only">Hazard scenario</span>
+              <select
+                id="tier-select-mobile"
+                className="w-full border border-kenya-line bg-kenya-panel/95 px-2 py-2 text-xs font-semibold shadow-sm backdrop-blur-sm"
+                value={activeTier}
+                onChange={(e) => setActiveTier(e.target.value)}
+              >
+                {(meta?.tiers || [{ id: 'moderate', label: 'Moderate', return_period_years: 25 }]).map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.label} (~1-in-{t.return_period_years} yr)
+                  </option>
+                ))}
+              </select>
+            </label>
+            <button
+              type="button"
+              className="pointer-events-auto shrink-0 rounded-md border border-kenya-line bg-kenya-panel/95 px-3 py-2 text-xs font-bold text-kenya-navy shadow-sm backdrop-blur-sm"
+              onClick={() => setBookPanelOpen(true)}
+            >
+              Locations
+            </button>
+          </div>
+
+          <div className="absolute bottom-20 left-3 right-16 z-[500] flex max-w-[calc(100%-1.5rem)] flex-wrap gap-x-2 gap-y-1 border border-kenya-line bg-kenya-panel/95 px-2 py-1.5 text-[10px] font-medium shadow-sm backdrop-blur-sm sm:hidden">
+            <span className="inline-flex items-center gap-1">
+              <i className="inline-block h-2 w-2 bg-kenya-coral" aria-hidden /> High
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <i className="inline-block h-2 w-2 bg-kenya-watch" aria-hidden /> Watch
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <i className="inline-block h-2 w-2 bg-[#17386a] dark:bg-kenya-navy" aria-hidden /> Lower
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <i className="inline-block h-2 w-2 border border-white bg-[#6b2d5c]" aria-hidden /> Hotspot
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <i className="inline-block h-2 w-2 rounded-full border-2 border-kenya-coral bg-transparent" aria-hidden /> Book
+            </span>
+          </div>
+          <div className="absolute bottom-3 left-3 z-[500] hidden max-w-[calc(100%-1.5rem)] flex-wrap gap-x-3 gap-y-1 border border-kenya-line bg-kenya-panel px-3 py-2 text-xs font-medium sm:flex">
+            <span className="inline-flex items-center gap-1.5">
+              <i className="inline-block h-2.5 w-2.5 bg-kenya-coral" aria-hidden /> High (≥50%)
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <i className="inline-block h-2.5 w-2.5 bg-kenya-watch" aria-hidden /> Watch
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <i className="inline-block h-2.5 w-2.5 bg-[#17386a] dark:bg-kenya-navy" aria-hidden /> Lower
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <i className="inline-block h-2.5 w-2.5 border border-white bg-[#6b2d5c]" aria-hidden /> Hotspot
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <i className="inline-block h-2.5 w-2.5 rounded-full border-2 border-kenya-coral bg-transparent" aria-hidden /> Treaty book (ring)
+            </span>
+          </div>
+          <button
+            className="absolute bottom-[4.75rem] left-3 z-[500] border border-kenya-line bg-kenya-panel/95 px-2.5 py-1 text-xs font-bold tracking-wide text-kenya-navy shadow-sm backdrop-blur-sm hover:bg-kenya-surface sm:bottom-12 sm:px-3 sm:py-1.5"
+            type="button"
+            onClick={() => setPitch3d((v) => !v)}
+            title="Toggle 3D buildings"
+          >
+            {pitch3d ? '2D' : '3D'}
+          </button>
+          <section className="absolute right-3 top-3 z-[500] hidden w-[min(320px,calc(100%-1.5rem))] border border-kenya-line bg-kenya-panel p-3 sm:block">
+            <h3 className="m-0 font-serif text-base font-semibold text-kenya-navy">Exceedance curve</h3>
+            <p className="mt-1 text-[11px] font-medium text-kenya-ink/90">
+              {epNote
+                ? `${epNote.label}: ${kes.format(epNote.portfolio_loss_kes)} (${pct.format(epNote.loss_pct_of_tiv)} of TIV)`
+                : 'Portfolio ground-up loss by tier'}
+            </p>
+            <EpLossLineChart
+              epCurve={lossCurve?.ep_curve}
+              maxLoss={maxEp}
+              activeReturnPeriodYears={activeReturnPeriodYears}
+              formatLoss={(v) => kes.format(v)}
+            />
+            <dl className="mt-2 grid gap-1">
+              {(lossCurve?.points || []).map((p) => (
+                <div key={p.tier} className="flex justify-between text-[11px]">
+                  <dt className={p.tier === activeTier ? 'font-bold text-kenya-navy' : 'text-kenya-muted'}>{p.label}</dt>
+                  <dd className="m-0 font-semibold text-kenya-navy">{kes.format(p.portfolio_loss_kes)}</dd>
+                </div>
+              ))}
+            </dl>
+          </section>
+        </main>
 
         <aside
           className={`fixed inset-y-0 right-0 z-[600] flex w-full max-w-md flex-col border-l border-kenya-line bg-kenya-panel shadow-xl transition-transform duration-200 max-lg:top-14 lg:static lg:max-w-none lg:shadow-none lg:transition-none ${
