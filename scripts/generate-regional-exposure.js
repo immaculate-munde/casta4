@@ -87,6 +87,20 @@ export const REGIONS = {
       { lat: -15.372, lon: 28.352, spread: 0.015, floodBias: 0.44, name: 'Ngwerere / stream corridor' },
     ],
   },
+  cote_divoire: {
+    slug: 'cote_divoire',
+    label: "Côte d'Ivoire (Abidjan)",
+    prefix: 'CIV',
+    sourceNote:
+      "synthetic Abidjan Côte d'Ivoire urban flood demo for Casta4 — not a real portfolio",
+    clusters: [
+      { lat: 5.336, lon: -4.026, spread: 0.012, floodBias: 0.16, name: 'Plateau / CBD' },
+      { lat: 5.354, lon: -4.089, spread: 0.015, floodBias: 0.48, name: 'Yopougon / low drainage' },
+      { lat: 5.362, lon: -3.987, spread: 0.013, floodBias: 0.22, name: 'Cocody / Bingerville fringe' },
+      { lat: 5.418, lon: -4.021, spread: 0.014, floodBias: 0.38, name: 'Abobo / north basin' },
+      { lat: 5.289, lon: -3.951, spread: 0.013, floodBias: 0.42, name: 'Koumassi / lagoon fringe' },
+    ],
+  },
 };
 
 function rnd(i, salt, regionSeed = 0) {

@@ -3,6 +3,7 @@
 import { useId, useState } from 'react';
 import { IconUpload } from '@/components/NavIcons';
 import { fetchRagJson, postRagJson } from '@/lib/api';
+import { notifyWorkspaceUpdated } from '@/components/WorkspaceFormatProvider';
 import { btnBase, btnPrimary, btnSm, cn } from '@/lib/buttons';
 
 const inputClass =
@@ -27,7 +28,10 @@ export default function ExposureCsvUpload({ onSuccess, compact = false }) {
         filename: file.name,
         region_label: regionLabel.trim() || undefined,
       });
-      setMsg(`Uploaded ${data.manifest?.exposure_rows ?? ''} locations. Map will refresh.`);
+      setMsg(
+        `Uploaded ${data.manifest?.exposure_rows ?? ''} locations (${data.manifest?.currency_code || 'KES'}). Map will refresh.`
+      );
+      notifyWorkspaceUpdated();
       onSuccess?.(data);
     } catch (e) {
       setErr(e.message);
@@ -44,7 +48,7 @@ export default function ExposureCsvUpload({ onSuccess, compact = false }) {
       {!compact ? (
         <input
           type="text"
-          placeholder="Region label (e.g. Mombasa)"
+          placeholder="Region label (e.g. Lusaka, Mombasa, Kisumu)"
           value={regionLabel}
           onChange={(e) => setRegionLabel(e.target.value)}
           className={inputClass}

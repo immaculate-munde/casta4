@@ -1,9 +1,9 @@
 'use client';
 
-const kes = new Intl.NumberFormat('en-KE', { style: 'currency', currency: 'KES', maximumFractionDigits: 0 });
-const pct = new Intl.NumberFormat('en-KE', { style: 'percent', maximumFractionDigits: 1 });
+import { useWorkspaceFormat } from '@/components/WorkspaceFormatProvider';
 
 export default function UnderwritingSheet({ data, loading, error }) {
+  const { formatMoney, formatPct } = useWorkspaceFormat();
   if (loading) return <p className="text-xs text-kenya-muted">Running CAT underwriting sheet…</p>;
   if (error) return <p className="text-xs text-kenya-coral">{error}</p>;
   if (!data?.sheet?.length) {
@@ -28,7 +28,7 @@ export default function UnderwritingSheet({ data, loading, error }) {
         <div className="border border-kenya-line bg-kenya-surface p-2">
           <p className="text-[10px] uppercase text-kenya-muted">100-yr hazard</p>
           <p className="mt-1 font-bold text-kenya-navy">
-            {pct.format(data.hazards?.extreme ?? 0)}
+            {formatPct.format(data.hazards?.extreme ?? 0)}
           </p>
         </div>
         <div className="border border-kenya-line bg-kenya-surface p-2">
@@ -55,11 +55,11 @@ export default function UnderwritingSheet({ data, loading, error }) {
               <tr key={row.return_period} className="border-b border-kenya-line/60">
                 <td className="py-1.5">{row.tier}</td>
                 <td className="py-1.5">{row.return_period}</td>
-                <td className="py-1.5">{pct.format(row.hazard_score ?? 0)}</td>
+                <td className="py-1.5">{formatPct.format(row.hazard_score ?? 0)}</td>
                 <td className="py-1.5">{Number(row.depth_m).toFixed(2)} m</td>
-                <td className="py-1.5">{pct.format(row.damage_ratio ?? 0)}</td>
-                <td className="py-1.5 tabular-nums">{kes.format(row.ground_up_loss_kes ?? 0)}</td>
-                <td className="py-1.5 tabular-nums font-semibold">{kes.format(row.gross_loss_kes ?? 0)}</td>
+                <td className="py-1.5">{formatPct.format(row.damage_ratio ?? 0)}</td>
+                <td className="py-1.5 tabular-nums">{formatMoney.format(row.ground_up_loss_kes ?? 0)}</td>
+                <td className="py-1.5 tabular-nums font-semibold">{formatMoney.format(row.gross_loss_kes ?? 0)}</td>
               </tr>
             ))}
           </tbody>

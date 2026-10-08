@@ -5,23 +5,8 @@ import { useEffect, useState } from 'react';
 import SignOutButton from '@/components/SignOutButton';
 import ThemeToggle from '@/components/ThemeToggle';
 import EventLossTable from '@/components/EventLossTable';
+import { useWorkspaceFormat } from '@/components/WorkspaceFormatProvider';
 import { fetchRagJson } from '@/lib/api';
-
-const kes = new Intl.NumberFormat('en-KE', {
-  style: 'currency',
-  currency: 'KES',
-  notation: 'compact',
-  maximumFractionDigits: 1,
-});
-const kesLong = new Intl.NumberFormat('en-KE', {
-  style: 'currency',
-  currency: 'KES',
-  maximumFractionDigits: 0,
-});
-const pct = new Intl.NumberFormat('en-KE', {
-  style: 'percent',
-  maximumFractionDigits: 1,
-});
 
 function StatusBadge({ status }) {
   const styles = {
@@ -48,6 +33,7 @@ function Sparkbar({ value, max, colour }) {
 }
 
 export default function Dashboard({ embedded = false }) {
+  const { formatMoney, formatMoneyCompact, formatPct } = useWorkspaceFormat();
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
 
@@ -116,8 +102,8 @@ export default function Dashboard({ embedded = false }) {
             },
             {
               label: 'Total Claimed',
-              value: claims ? kes.format(claims.total_claimed_kes) : '—',
-              sub: claims ? `${kes.format(claims.total_settled_kes)} settled` : 'loading…',
+              value: claims ? formatMoneyCompact.format(claims.total_claimed_kes) : '—',
+              sub: claims ? `${formatMoneyCompact.format(claims.total_settled_kes)} settled` : 'loading…',
               accent: 'border-l-4 border-l-kenya-blue',
             },
             {
@@ -128,16 +114,16 @@ export default function Dashboard({ embedded = false }) {
             },
             {
               label: 'Portfolio TIV',
-              value: flood ? kes.format(flood.total_tiv_kes) : '—',
+              value: flood ? formatMoneyCompact.format(flood.total_tiv_kes) : '—',
               sub: flood ? `${flood.location_count} locations` : 'loading…',
               accent: '',
             },
             {
               label: flood?.cat_engine_loaded ? '100-yr gross (CAT)' : 'Team EP (≥10 yr)',
               value: flood?.cat_100yr?.gross_loss_kes
-                ? kes.format(flood.cat_100yr.gross_loss_kes)
+                ? formatMoneyCompact.format(flood.cat_100yr.gross_loss_kes)
                 : flood?.moderate_loss_kes != null
-                  ? kes.format(flood.moderate_loss_kes)
+                  ? formatMoneyCompact.format(flood.moderate_loss_kes)
                   : '—',
               sub: flood?.cat_engine_loaded
                 ? `Linus engine · AI ${flood.cat_use_ai ? 'on' : 'off'} · ${flood.cat_hotspot_assets ?? 0} hotspot assets`
@@ -182,19 +168,19 @@ export default function Dashboard({ embedded = false }) {
               {[
                 {
                   label: '100-yr ground-up (CAT)',
-                  value: kes.format(flood.cat_100yr?.ground_up_loss_kes ?? 0),
+                  value: formatMoneyCompact.format(flood.cat_100yr?.ground_up_loss_kes ?? 0),
                 },
                 {
                   label: '100-yr gross (CAT)',
-                  value: kes.format(flood.cat_100yr?.gross_loss_kes ?? 0),
+                  value: formatMoneyCompact.format(flood.cat_100yr?.gross_loss_kes ?? 0),
                 },
                 {
                   label: '100-yr net (CAT)',
-                  value: kes.format(flood.cat_100yr?.net_loss_kes ?? 0),
+                  value: formatMoneyCompact.format(flood.cat_100yr?.net_loss_kes ?? 0),
                 },
                 {
                   label: 'Portfolio TSI',
-                  value: kes.format(flood.total_tiv_kes ?? 0),
+                  value: formatMoneyCompact.format(flood.total_tiv_kes ?? 0),
                   sub: `${flood.location_count} locations`,
                 },
               ].map((k) => (
@@ -231,7 +217,7 @@ export default function Dashboard({ embedded = false }) {
                 <p className="font-mono text-xs text-kenya-muted">{claims.current_claim.claim_id}</p>
                 <p className="mt-1 font-semibold">{claims.current_claim.insured}</p>
                 <div className="my-3 font-serif text-3xl font-semibold text-kenya-navy">
-                  {kesLong.format(claims.current_claim.claimed_amount_kes)}
+                  {formatMoney.format(claims.current_claim.claimed_amount_kes)}
                 </div>
                 <dl className="grid grid-cols-2 gap-3 border-t border-kenya-line pt-3 text-xs">
                   <div>
@@ -279,7 +265,7 @@ export default function Dashboard({ embedded = false }) {
                         <td className="px-4 py-2.5 font-mono text-xs">{c.claim_id}</td>
                         <td className="px-4 py-2.5">{c.insured}</td>
                         <td className="px-4 py-2.5">{c.peril}</td>
-                        <td className="px-4 py-2.5 text-right font-semibold tabular-nums">{kes.format(c.claimed_amount_kes)}</td>
+                        <td className="px-4 py-2.5 text-right font-semibold tabular-nums">{formatMoneyCompact.format(c.claimed_amount_kes)}</td>
                         <td className="px-4 py-2.5">
                           <StatusBadge status={c.status} />
                         </td>
@@ -321,7 +307,7 @@ export default function Dashboard({ embedded = false }) {
                     </div>
                     <div className="text-right text-xs">
                       <span className="font-bold text-kenya-coral">{Math.round(loc.hazard * 100)}%</span>
-                      <span className="block text-kenya-muted">{kes.format(loc.tiv_kes)} TIV</span>
+                      <span className="block text-kenya-muted">{formatMoneyCompact.format(loc.tiv_kes)} TIV</span>
                     </div>
                   </div>
                 ))
@@ -341,7 +327,7 @@ export default function Dashboard({ embedded = false }) {
                     <div className="flex flex-wrap items-baseline justify-between gap-1 text-xs">
                       <span className="font-semibold">{h.label}</span>
                       <span className="text-kenya-muted">{h.count} locations</span>
-                      <span className="font-semibold tabular-nums">{kes.format(h.tiv_kes)}</span>
+                      <span className="font-semibold tabular-nums">{formatMoneyCompact.format(h.tiv_kes)}</span>
                     </div>
                     <Sparkbar
                       value={h.tiv_kes}
@@ -385,7 +371,7 @@ export default function Dashboard({ embedded = false }) {
                 <p className="border-t border-kenya-line pt-3 text-xs text-kenya-muted">
                   Settlement ratio:{' '}
                   <strong className="text-kenya-navy">
-                    {pct.format(claims.total_settled_kes / claims.total_claimed_kes)}
+                    {formatPct.format(claims.total_settled_kes / claims.total_claimed_kes)}
                   </strong>
                 </p>
               </div>
@@ -402,7 +388,7 @@ export default function Dashboard({ embedded = false }) {
               </span>
             </div>
             <div className="font-serif text-3xl font-semibold text-kenya-navy">
-              {flood?.severe_loss_kes != null ? kes.format(flood.severe_loss_kes) : '—'}
+              {flood?.severe_loss_kes != null ? formatMoneyCompact.format(flood.severe_loss_kes) : '—'}
             </div>
             <p className="mt-1 text-xs text-kenya-muted">
               Team EP at severe return period · {flood ? flood.location_count : '—'} locations on map

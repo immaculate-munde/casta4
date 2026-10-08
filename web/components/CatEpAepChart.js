@@ -11,7 +11,7 @@ function eltToAepPoints(elt) {
   }));
 }
 
-export default function CatEpAepChart({ baselineElt, aiElt, useAi = true }) {
+export default function CatEpAepChart({ baselineElt, aiElt, useAi = true, currencyCode = 'KES' }) {
   const baseline = eltToAepPoints(baselineElt);
   const ai = eltToAepPoints(aiElt);
   const series = [
@@ -39,7 +39,7 @@ export default function CatEpAepChart({ baselineElt, aiElt, useAi = true }) {
     <figure className="border border-kenya-line bg-kenya-panel p-4">
       <figcaption className="font-serif text-lg font-semibold text-kenya-navy">Exceedance probability (CAT)</figcaption>
       <p className="mt-1 text-[11px] text-kenya-muted">
-        Gross insured loss (M KES) vs annual exceedance probability — matches Streamlit portfolio analytics.
+        Gross insured loss (M {currencyCode}) vs annual exceedance probability — matches Streamlit portfolio analytics.
         {useAi ? ' Showing AI-rectified as primary table elsewhere.' : ' AI rectifier off in Settings.'}
       </p>
       <svg viewBox={`0 0 ${width} ${height}`} className="mt-3 w-full max-w-3xl">
@@ -75,7 +75,7 @@ export default function CatEpAepChart({ baselineElt, aiElt, useAi = true }) {
           );
         })}
         <text x={pad.l + innerW / 2} y={height - 8} textAnchor="middle" className="fill-kenya-ink text-[10px] font-semibold">
-          Gross insured loss (million KES)
+          Gross insured loss (million {currencyCode})
         </text>
       </svg>
       <ul className="mt-2 flex flex-wrap gap-4 text-[11px] font-semibold">

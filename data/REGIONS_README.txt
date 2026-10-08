@@ -7,6 +7,7 @@ Files (150 locations each, same columns as team_a_nairobi/exposure_nairobi_with_
   team_a_wajir/exposure_wajir_with_hazard.csv       → region label: Wajir
   team_a_turkana/exposure_turkana_with_hazard.csv   → region label: Turkana
   team_a_lusaka/exposure_lusaka_with_hazard.csv       → region label: Lusaka (Zambia)
+  team_a_cote_divoire/exposure_cote_divoire_with_hazard.csv → region label: Côte d'Ivoire or Abidjan
 
 Regenerate all:
   node scripts/generate-regional-exposure.js
@@ -14,6 +15,9 @@ Regenerate all:
 Regenerate one region:
   node scripts/generate-regional-exposure.js kisumu
 
-Loc ID prefixes: MBSA-, KSM-, WJR-, TRK-, LSK-
+Loc ID prefixes: MBSA-, KSM-, WJR-, TRK-, LSK-, CIV-
 
-Not real portfolios. CAT engine rasters remain Nairobi-oriented unless you add region-specific engine data.
+Currency on upload: Kenya regions KES · Lusaka ZMW · Côte d'Ivoire XOF (CFA)
+
+Not real portfolios. On upload, region label sets currency (e.g. Lusaka → ZMW, Kenya regions → KES).
+Portfolio CAT uses CSV hazard columns; Nairobi GeoTIFF/hotspots only fully apply for Nairobi.

@@ -64,6 +64,10 @@ export default function SettingsPage() {
               <dd className="font-medium text-kenya-ink">{status?.manifest?.region_label || '—'}</dd>
             </div>
             <div className="flex justify-between gap-4">
+              <dt className="text-kenya-muted">Currency</dt>
+              <dd className="font-medium text-kenya-ink">{status?.manifest?.currency_code || 'KES'}</dd>
+            </div>
+            <div className="flex justify-between gap-4">
               <dt className="text-kenya-muted">Exposure rows</dt>
               <dd className="font-medium text-kenya-ink">{status?.exposure_row_count ?? '—'}</dd>
             </div>
