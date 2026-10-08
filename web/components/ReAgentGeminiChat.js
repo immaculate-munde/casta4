@@ -60,7 +60,7 @@ function SourcePills({ sources }) {
 }
 
 export default function ReAgentGeminiChat({ onClose, fullscreen, onToggleFullscreen, embedded = false }) {
-  const { propertyContext } = useChatDrawer();
+  const { propertyContext, pendingPrompt, setPendingPrompt } = useChatDrawer();
   const { user } = useUserSession();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sessions, setSessions] = useState([]);
@@ -96,6 +96,12 @@ export default function ReAgentGeminiChat({ onClose, fullscreen, onToggleFullscr
       setActiveId(s.id);
     }
   }, []);
+
+  useEffect(() => {
+    if (!pendingPrompt) return;
+    setInput(pendingPrompt);
+    setPendingPrompt('');
+  }, [pendingPrompt, setPendingPrompt]);
 
   useEffect(() => {
     if (sessions.length) saveSessions(sessions);

@@ -15,13 +15,17 @@ export default function ChatDrawerProvider({ children }) {
   const [open, setOpen] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
   const [propertyContext, setPropertyContext] = useState(null);
-  /** Move floating ReAgent away from the map property panel when open. */
-  const [fabPreferLeft, setFabPreferLeft] = useState(false);
+  const [pendingPrompt, setPendingPrompt] = useState('');
 
   const openChat = useCallback(() => setOpen(true), []);
+  const openChatWithPrompt = useCallback((prompt = '') => {
+    setPendingPrompt(prompt);
+    setOpen(true);
+  }, []);
   const closeChat = useCallback(() => {
     setOpen(false);
     setFullscreen(false);
+    setPendingPrompt('');
   }, []);
   const toggleFullscreen = useCallback(() => setFullscreen((v) => !v), []);
 
@@ -30,14 +34,15 @@ export default function ChatDrawerProvider({ children }) {
       value={{
         open,
         openChat,
+        openChatWithPrompt,
         closeChat,
         setOpen,
         fullscreen,
         toggleFullscreen,
         propertyContext,
         setPropertyContext,
-        fabPreferLeft,
-        setFabPreferLeft,
+        pendingPrompt,
+        setPendingPrompt,
       }}
     >
       {children}

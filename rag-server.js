@@ -15,7 +15,12 @@ import nairobiRouter from './lib/nairobi-routes.js';
 import workspaceRouter from './lib/workspace-routes.js';
 import catRouter from './lib/cat-routes.js';
 import { catEngineHealthy, catModelConfigured, runCatSimulation } from './lib/cat-engine-client.js';
-import { loadPortfolio, computePortfolioSummary, enrichRow } from './lib/nairobi-flood-cat.js';
+import {
+  loadPortfolio,
+  computePortfolioSummary,
+  enrichRow,
+  computeLossCurve,
+} from './lib/nairobi-flood-cat.js';
 import { loadExternalEpCurve } from './lib/ep-curve-model.js';
 import { loadUploadedDocTexts } from './lib/workspace-store.js';
 
@@ -82,11 +87,13 @@ Use a concise, professional tone. ${greetingInstruction}
 If the question is unrelated to reinsurance claims, flood underwriting, or this knowledge base, politely redirect.
 Never identify yourself as an AI model or mention model providers.
 
+When asked about EP curves, return-period curves, loss curves, or catastrophe metrics, explain them in plain English using the actual curve data in the context. Define what the return period means, interpret the relationship between return period and loss, and highlight the steepness or severity of the curve. Use the points from the input data rather than generic theory.
+
 Guidelines:
 1. Base answers ONLY on the retrieved context provided.
 2. Use the retrieved context as your primary source of truth.
 3. If the context contains relevant information, answer from it directly before saying you lack information.
-4. Cite specific documents or sources from the context (policy sections, treaty articles, claim form fields, investigation findings).
+4. Cite specific documents or sources from the context (policy sections, treaty articles, claim form fields, investigation findings, or curve data points).
 5. If the context truly lacks relevant information, say "I don't have enough information about that in my knowledge base" and recommend that a human reviewer obtain missing documentation or confirm with Kenya Re underwriting/claims.
 6. Avoid speculation; when uncertain, escalate to human review.
 7. Keep answers concise and practical.`;
@@ -180,7 +187,38 @@ async function runRag(question) {
   const userBlocks = userDocs.map(
     (d) => `[User upload: ${d.filename}]\n${d.text.slice(0, 12_000)}`
   );
-  const mergedContext = [...context, ...userBlocks].slice(0, 12);
+
+  const curveRelevant = /curve|ep curve|loss curve|return period|return-period|return_period|exceedance|loss_kes|loss curve/i.test(question);
+  let curveBlock = '';
+  let curveSources = [];
+  if (curveRelevant) {
+    try {
+      const { exposure } = await loadPortfolio();
+      const curve = await computeLossCurve(exposure);
+      const external = await loadExternalEpCurve();
+      const points = curve?.ep_curve || [];
+      const externalPoints = external?.ep_curve || [];
+      const summary = [
+        'Curve context: portfolio hazard curve and modeled EP curve.',
+        points.length
+          ? `Portfolio curve points: ${points
+              .map((p) => `${p.return_period_years}yr=${Number(p.loss_kes || 0).toLocaleString()} KES`)
+              .join('; ')}`
+          : 'Portfolio curve not loaded.',
+        externalPoints.length
+          ? `Modeled EP points: ${externalPoints
+              .map((p) => `${p.return_period_years}yr=${Number(p.loss_kes || 0).toLocaleString()} KES`)
+              .join('; ')}`
+          : 'No modeled EP CSV loaded yet.',
+      ].join('\n');
+      curveBlock = `[Curve data]\n${summary}`;
+      curveSources = [{ id: 'curve-data', file: 'portfolio-loss-curve', kind: 'curve', excerpt: summary.slice(0, 220) }];
+    } catch {
+      curveBlock = '[Curve data]\nCurve data unavailable at this moment.';
+    }
+  }
+
+  const mergedContext = [...context, ...userBlocks, ...(curveBlock ? [curveBlock] : [])].slice(0, 12);
   const mergedSources = [
     ...sources,
     ...userDocs.map((d, i) => ({
@@ -189,6 +227,7 @@ async function runRag(question) {
       kind: 'upload',
       excerpt: d.text.slice(0, 120),
     })),
+    ...curveSources,
   ];
 
   const prompt = `Retrieved context:\n${mergedContext.join('\n\n')}\n\nUser question: ${question}\n\nAnswer:`;

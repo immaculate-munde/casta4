@@ -51,8 +51,16 @@ export default function ChatDocumentUpload() {
     setNote('');
     try {
       const payload = await readFileAsUploadPayload(file);
-      const data = await postRagJson('/api/workspace/document', payload);
-      setNote(`Added ${data.filename} — ReAgent will cite it in answers.`);
+      const shouldMapExposure = /\.pdf$/i.test(file.name) || /pdf/i.test(file.type || '');
+      const data = await postRagJson('/api/workspace/document', {
+        ...payload,
+        convert_to_exposure: shouldMapExposure,
+      });
+      setNote(
+        data.converted_to_exposure
+          ? `Added ${data.filename} and mapped it to the hazard exposure grid.`
+          : `Added ${data.filename} — ReAgent will cite it in answers.`
+      );
       await refresh();
     } catch (e) {
       setNote(e.message);

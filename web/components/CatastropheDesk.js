@@ -10,14 +10,16 @@ import ThemeToggle from '@/components/ThemeToggle';
 import { useChatDrawer } from '@/components/ChatDrawerProvider';
 import { fetchRagJson, postRagJson, ragApiBase } from '@/lib/api';
 import { dr100Band, housingToConstruction } from '@/lib/housing';
-import { useWorkspaceFormat } from '@/components/WorkspaceFormatProvider';
-import { btnBase, btnMapOverlay, btnPrimary, btnSecondary, btnSm, cn } from '@/lib/buttons';
+import { btnBase, btnMapOverlay, btnPrimary, btnSm, cn } from '@/lib/buttons';
 
 const hazardPctClass = {
   high: 'text-kenya-coral',
   watch: 'text-kenya-watch',
   low: 'text-kenya-navy',
 };
+
+const kes = new Intl.NumberFormat('en-KE', { style: 'currency', currency: 'KES', maximumFractionDigits: 0 });
+const pct = new Intl.NumberFormat('en-KE', { style: 'percent', maximumFractionDigits: 1 });
 
 function hazardPct(score) {
   return `${Math.round((score || 0) * 100)}%`;
@@ -80,9 +82,6 @@ const BAND_COLOUR = {
 };
 
 export default function CatastropheDesk({ shellMode = false, onPortfolioChange }) {
-  const { formatMoney, formatPct } = useWorkspaceFormat();
-  /** App shell: header + mobile bottom nav (fixed panels only). */
-  const mobileFixedTop = shellMode ? 'max-lg:top-[7.25rem]' : 'max-lg:top-14';
   const mapRef = useRef(null);
   const mapInstance = useRef(null);
   const popupRef = useRef(null);
@@ -109,10 +108,7 @@ export default function CatastropheDesk({ shellMode = false, onPortfolioChange }
   const [uwData, setUwData] = useState(null);
   const [uwLoading, setUwLoading] = useState(false);
   const [uwError, setUwError] = useState('');
-  const [hazardPanelHover, setHazardPanelHover] = useState(false);
-  const [hazardPanelPinned, setHazardPanelPinned] = useState(false);
-  const hazardPanelOpen = hazardPanelHover || hazardPanelPinned;
-  const { setPropertyContext, openChat, setFabPreferLeft } = useChatDrawer();
+  const { setPropertyContext, openChat, openChatWithPrompt } = useChatDrawer();
 
   const epNote = lossCurve?.points?.find((p) => p.tier === activeTier);
 
@@ -361,7 +357,7 @@ export default function CatastropheDesk({ shellMode = false, onPortfolioChange }
           const region = metaData.region_label || 'Portfolio';
           const peril = metaData.peril_label || 'pluvial book';
           setSummaryText(
-            `${summary.location_count} locations · ${formatMoney.format(summary.total_tiv_kes)} TIV · ${region} · ${peril}`
+            `${summary.location_count} locations · ${kes.format(summary.total_tiv_kes)} TIV · ${region} · ${peril}`
           );
 
           map.getSource('hotspots')?.setData(hotspotsToGeoJSON(hotspotData.hotspots || []));
@@ -438,15 +434,6 @@ export default function CatastropheDesk({ shellMode = false, onPortfolioChange }
     });
     return () => setPropertyContext(null);
   }, [openId, detail, activeTier, locations, setPropertyContext]);
-
-  useEffect(() => {
-    if (!shellMode) {
-      setFabPreferLeft(false);
-      return undefined;
-    }
-    setFabPreferLeft(Boolean(openId));
-    return () => setFabPreferLeft(false);
-  }, [shellMode, openId, setFabPreferLeft]);
 
   // ── Reload map exposure when tier changes ────────────────────────────────
   useEffect(() => {
@@ -561,6 +548,15 @@ export default function CatastropheDesk({ shellMode = false, onPortfolioChange }
 
   const maxEp = Math.max(...(lossCurve?.ep_curve?.map((p) => p.loss_kes) || [1]), 1);
   const hazardRank = openId ? sorted.findIndex((r) => r.loc_id === openId) + 1 : null;
+  const curvePrompt = useCallback(() => {
+    const activeScenario = lossCurve?.points?.find((p) => p.tier === activeTier) || lossCurve?.points?.[0];
+    const curvePoints = (lossCurve?.ep_curve || []).slice(0, 5).map((p) => `${p.return_period_years}yr=${kes.format(p.loss_kes)}`).join('; ');
+    const locationText = detail?.loc_id ? `for ${detail.loc_id}` : 'for the current portfolio';
+    const scenarioText = activeScenario
+      ? `Current scenario: ${activeScenario.label || activeTier} with avg hazard ${pct.format(activeScenario.avg_hazard ?? 0)} and portfolio loss ${kes.format(activeScenario.portfolio_loss_kes ?? 0)}.`
+      : 'No active scenario is loaded yet.';
+    return `Explain this EP curve in plain English ${locationText}. ${scenarioText} Use the current return-period data: ${curvePoints || 'no points loaded yet'}. Say what the return periods mean, which years are most severe, and how to interpret the loss growth from the curve.`;
+  }, [activeTier, detail?.loc_id, lossCurve, openId]);
   const bookAvgHazard =
     locations.length > 0 ? locations.reduce((s, r) => s + (r.hazard || 0), 0) / locations.length : 0;
   const openRow = openId ? locations.find((r) => r.loc_id === openId) : null;
@@ -617,15 +613,15 @@ export default function CatastropheDesk({ shellMode = false, onPortfolioChange }
         </>
       ) : (
         <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-kenya-line bg-kenya-panel px-3 py-2">
-          <p className="min-w-0 basis-full truncate text-xs font-medium text-kenya-muted sm:basis-auto sm:flex-1" title={summaryText}>
+          <p className="min-w-0 flex-1 truncate text-xs font-medium text-kenya-muted" title={summaryText}>
             {summaryText}
           </p>
-          <Link href="/ep-curve" className={cn(btnBase, btnSm, 'min-h-9 shrink-0 no-underline normal-case')}>
+          <Link href="/ep-curve" className={cn(btnBase, btnSm, 'shrink-0 no-underline normal-case')}>
             EP curve
           </Link>
           <button
             type="button"
-            className={cn(btnPrimary, btnSm, 'min-h-9 shrink-0 normal-case')}
+            className={cn(btnPrimary, btnSm, 'shrink-0 normal-case')}
             onClick={() => setUploadOpen((v) => !v)}
           >
             {uploadOpen ? 'Close upload' : 'Upload CSV'}
@@ -638,7 +634,6 @@ export default function CatastropheDesk({ shellMode = false, onPortfolioChange }
           <ExposureCsvUpload
             onSuccess={() => {
               onPortfolioChange?.();
-              setUploadOpen(false);
               boundsFitOnce.current = false;
             }}
           />
@@ -648,7 +643,7 @@ export default function CatastropheDesk({ shellMode = false, onPortfolioChange }
       {caseOpen ? (
         <button
           type="button"
-          className={`fixed inset-x-0 bottom-0 z-[550] bg-black/40 lg:hidden ${mobileFixedTop}`}
+          className="fixed inset-0 z-[550] bg-black/40 lg:hidden"
           aria-label="Close location panel"
           onClick={() => setCaseOpen(false)}
         />
@@ -752,7 +747,7 @@ export default function CatastropheDesk({ shellMode = false, onPortfolioChange }
                 <span className={`text-right text-xs font-bold ${hazardPctClass[row.hazard_band] || hazardPctClass.low}`}>
                   {hazardPct(row.hazard)}
                 </span>
-                <span className="text-right text-[11px] tabular-nums text-kenya-muted">{formatMoney.format(row.tiv_kes)}</span>
+                <span className="text-right text-[11px] tabular-nums text-kenya-muted">{kes.format(row.tiv_kes)}</span>
               </button>
             ))}
             {locations.length > 120 ? (
@@ -849,81 +844,48 @@ export default function CatastropheDesk({ shellMode = false, onPortfolioChange }
             ) : null}
           </div>
           <section
-            className="absolute bottom-3 right-3 z-[500] hidden max-w-[min(320px,calc(100%-1.5rem))] sm:block"
-            onMouseEnter={() => setHazardPanelHover(true)}
-            onMouseLeave={() => setHazardPanelHover(false)}
+            className={`absolute right-3 z-[500] hidden w-[min(320px,calc(100%-1.5rem))] border border-kenya-line bg-kenya-panel p-3 sm:block ${
+              shellMode ? 'bottom-3 top-auto' : 'top-3'
+            }`}
           >
-            <div
-              className={`border border-kenya-line bg-kenya-panel/95 shadow-md backdrop-blur-sm transition-[padding,box-shadow] ${
-                hazardPanelOpen ? 'p-3 shadow-lg' : 'cursor-default p-2'
-              }`}
+            <h3 className="m-0 font-serif text-base font-semibold text-kenya-navy">Hazard landscape</h3>
+            <p className="mt-1 text-[10px] leading-snug text-kenya-muted">
+              From current exposure CSV · same tiers as map scenario · not financial loss
+            </p>
+            <p className="mt-1 text-[11px] font-medium text-kenya-ink/90">
+              {epNote
+                ? `${epNote.label}: avg hazard ${pct.format(epNote.loss_pct_of_tiv)} · index ${kes.format(epNote.hazard_weighted_tiv_kes ?? epNote.portfolio_loss_kes)}`
+                : 'Upload exposure CSV to build curve'}
+            </p>
+            <EpLossLineChart
+              epCurve={lossCurve?.ep_curve}
+              maxLoss={maxEp}
+              activeReturnPeriodYears={activeReturnPeriodYears}
+              formatLoss={(v) => kes.format(v)}
+            />
+            <button
+              type="button"
+              className={cn(btnPrimary, btnSm, 'mt-2 inline-flex w-full justify-center normal-case')}
+              onClick={() => openChatWithPrompt(curvePrompt())}
             >
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                  <h3 className="m-0 font-serif text-sm font-semibold text-[#0f2d52] dark:text-[#e8eaed]">
-                    Hazard landscape
-                  </h3>
-                  {!hazardPanelOpen ? (
-                    <p className="mt-0.5 truncate text-[11px] font-medium text-kenya-ink">
-                      {epNote
-                        ? `${epNote.label} · ${formatPct.format(epNote.loss_pct_of_tiv)} avg · hover for chart`
-                        : 'Hover for hazard index · not financial EP'}
-                    </p>
-                  ) : (
-                    <p className="mt-0.5 text-[10px] leading-snug text-kenya-muted">
-                      Exposure CSV tiers · same as map · not financial loss
-                    </p>
-                  )}
+              Explain this curve
+            </button>
+            <Link href="/ep-curve" className={cn(btnBase, btnSm, 'mt-2 inline-flex w-full justify-center no-underline')}>
+              Full EP & team model
+            </Link>
+            <dl className="mt-2 grid gap-1">
+              {(lossCurve?.points || []).map((p) => (
+                <div key={p.tier} className="flex justify-between text-[11px]">
+                  <dt className={p.tier === activeTier ? 'font-bold text-kenya-navy' : 'text-kenya-muted'}>{p.label}</dt>
+                  <dd className="m-0 font-semibold text-kenya-navy">{pct.format(p.avg_hazard ?? p.loss_pct_of_tiv)}</dd>
                 </div>
-                <button
-                  type="button"
-                  className={cn(btnSm, 'shrink-0 rounded-full border border-kenya-line px-2 py-0.5 text-[10px] font-bold !text-[#0f2d52] dark:!text-[#e8eaed]')}
-                  onClick={() => setHazardPanelPinned((v) => !v)}
-                  aria-pressed={hazardPanelPinned}
-                  title={hazardPanelPinned ? 'Unpin panel' : 'Pin panel open'}
-                >
-                  {hazardPanelPinned ? 'Unpin' : 'Pin'}
-                </button>
-              </div>
-              {hazardPanelOpen ? (
-                <>
-                  <p className="mt-2 text-[11px] font-medium text-kenya-ink">
-                    {epNote
-                      ? `${epNote.label}: avg hazard ${formatPct.format(epNote.loss_pct_of_tiv)} · index ${formatMoney.format(epNote.hazard_weighted_tiv_kes ?? epNote.portfolio_loss_kes)}`
-                      : 'Upload exposure CSV to build curve'}
-                  </p>
-                  <EpLossLineChart
-                    epCurve={lossCurve?.ep_curve}
-                    maxLoss={maxEp}
-                    activeReturnPeriodYears={activeReturnPeriodYears}
-                    formatLoss={(v) => formatMoney.format(v)}
-                  />
-                  <Link
-                    href="/ep-curve"
-                    className={cn(btnSecondary, btnSm, 'mt-2 inline-flex w-full justify-center no-underline')}
-                  >
-                    Full EP &amp; team model
-                  </Link>
-                  <dl className="mt-2 grid gap-0.5">
-                    {(lossCurve?.points || []).map((p) => (
-                      <div key={p.tier} className="flex justify-between text-[11px]">
-                        <dt className={p.tier === activeTier ? 'font-bold text-[#0f2d52] dark:text-[#e8eaed]' : 'text-kenya-muted'}>
-                          {p.label}
-                        </dt>
-                        <dd className="m-0 font-semibold text-[#0f2d52] dark:text-[#e8eaed]">
-                          {formatPct.format(p.avg_hazard ?? p.loss_pct_of_tiv)}
-                        </dd>
-                      </div>
-                    ))}
-                  </dl>
-                </>
-              ) : null}
-            </div>
+              ))}
+            </dl>
           </section>
         </main>
 
         <aside
-          className={`fixed inset-y-0 right-0 z-[600] flex w-full max-w-md flex-col border-l border-kenya-line bg-kenya-panel shadow-xl transition-transform duration-200 ${mobileFixedTop} lg:max-w-none lg:shadow-none lg:transition-none lg:top-0 ${
+          className={`fixed inset-y-0 right-0 z-[600] flex w-full max-w-md flex-col border-l border-kenya-line bg-kenya-panel shadow-xl transition-transform duration-200 max-lg:top-14 lg:max-w-none lg:shadow-none lg:transition-none ${
             caseOpen ? 'translate-x-0' : 'translate-x-full'
           } ${shellMode ? (openId ? 'lg:static lg:flex' : 'lg:hidden') : 'lg:static lg:translate-x-0'}`}
         >
@@ -942,7 +904,7 @@ export default function CatastropheDesk({ shellMode = false, onPortfolioChange }
               )
             ) : (
               <>
-                <div className="relative shrink-0 border-b border-kenya-line px-4 py-3">
+                <div className="relative shrink-0 px-4 pt-4">
                   <button
                     type="button"
                     className={cn(btnBase, btnSm, 'absolute right-3 top-3 lg:hidden')}
@@ -950,46 +912,37 @@ export default function CatastropheDesk({ shellMode = false, onPortfolioChange }
                   >
                     Close
                   </button>
-                  <div className="flex items-start justify-between gap-3 pr-14 lg:pr-0">
-                    <div className="min-w-0">
-                      <p className="m-0 text-[10px] font-bold uppercase tracking-wide text-kenya-muted">
-                        {detail.housing_label} · {meta?.region_label || 'Portfolio'}
-                      </p>
-                      <h2 className="mt-0.5 break-all font-serif text-xl font-semibold text-[#0f2d52] dark:text-[#e8eaed] sm:break-normal">
-                        {detail.loc_id}
-                      </h2>
-                    </div>
-                    <div className="shrink-0 text-right">
-                      <strong
-                        className={`block text-xl leading-none ${level === 'high' ? 'text-kenya-coral' : level === 'watch' ? 'text-kenya-watch' : 'text-[#0f2d52] dark:text-[#8ab4f8]'}`}
-                      >
-                        {hazardPct(activeLoss?.hazard)}
-                      </strong>
-                      <span className="text-[10px] font-bold uppercase text-kenya-muted">Hazard ({activeTier})</span>
-                    </div>
-                  </div>
-                  <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-kenya-muted">
-                    <span className="font-semibold text-kenya-ink">{detail.cedant_name}</span>
-                    <span aria-hidden className="text-kenya-line">
-                      ·
-                    </span>
+                  <p className="m-0 pr-16 text-[11px] font-bold uppercase text-kenya-muted lg:pr-0">
+                    {detail.housing_label} · {meta?.region_label || 'Portfolio'}
+                  </p>
+                  <h2 className="mt-1 font-serif text-2xl font-semibold text-kenya-navy sm:text-[28px]">{detail.loc_id}</h2>
+                  <p className="mt-1 text-kenya-muted">
+                    Cedant: <strong className="text-kenya-ink">{detail.cedant_name}</strong> ({detail.cedant_id})
+                  </p>
+                  <p className="mt-1">
                     {detail.kenya_re_in_book ? (
-                      <span className={`${bookBadgeIn} px-1.5 py-0.5 text-[9px]`}>In book</span>
+                      <span className={`${bookBadgeIn} text-[10px] px-2 py-1`}>In Kenya Re reinsurance book</span>
                     ) : (
-                      <span className={`${bookBadgeOut} px-1.5 py-0.5 text-[9px]`}>Modeled · not in book</span>
+                      <span className={`${bookBadgeOut} text-[10px] px-2 py-1`}>Not in Kenya Re book (modeled)</span>
                     )}
-                    <span aria-hidden className="text-kenya-line">
-                      ·
-                    </span>
-                    <span className="tabular-nums">
-                      {detail.lat.toFixed(5)}, {detail.lon.toFixed(5)}
-                    </span>
+                  </p>
+                  <p className="mt-2 text-kenya-muted">
+                    {detail.lat.toFixed(5)}, {detail.lon.toFixed(5)}
+                  </p>
+                  <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+                    <button type="button" className={cn(btnPrimary, 'w-full sm:w-auto')} onClick={openChat}>
+                      Ask ReAgent about this property →
+                    </button>
+                    <button
+                      type="button"
+                      className={cn(btnBase, 'w-full sm:w-auto')}
+                      onClick={() => openChatWithPrompt(curvePrompt())}
+                    >
+                      Explain this EP curve
+                    </button>
                   </div>
-                  <button type="button" className={cn(btnPrimary, 'mt-3 w-full !text-white')} onClick={openChat}>
-                    Ask ReAgent about this property
-                  </button>
                 </div>
-                <nav className="flex shrink-0 flex-wrap gap-1.5 border-b border-kenya-line px-4 py-2" aria-label="Location detail sections">
+                <nav className="mt-3 flex shrink-0 flex-wrap gap-2 border-b border-kenya-line px-4 pb-2" aria-label="Location detail sections">
                   {[
                     { id: 'overview', label: 'Overview' },
                     { id: 'scenarios', label: 'Scenarios' },
@@ -1003,8 +956,8 @@ export default function CatastropheDesk({ shellMode = false, onPortfolioChange }
                         btnSm,
                         'rounded-full border-2 px-3.5 py-1.5 normal-case',
                         dossierTab === tab.id
-                          ? 'border-[#0f2d52] bg-[#0f2d52] font-bold !text-white dark:border-[#1a4a8a] dark:bg-[#1a4a8a] dark:!text-white'
-                          : 'border-kenya-line bg-white font-semibold !text-[#0f2d52] hover:border-[#0f2d52] dark:bg-[#1a1d21] dark:!text-[#e8eaed] dark:hover:border-[#dadce0]'
+                          ? 'border-[#0f2d52] bg-[#0f2d52] font-bold text-white dark:border-[#1a4a8a] dark:bg-[#1a4a8a] dark:text-white'
+                          : 'border-kenya-line bg-white font-semibold text-[#0f2d52] hover:border-[#0f2d52] dark:bg-[#1a1d21] dark:text-[#e8eaed] dark:hover:border-[#dadce0]'
                       )}
                       onClick={() => setDossierTab(tab.id)}
                     >
@@ -1012,50 +965,59 @@ export default function CatastropheDesk({ shellMode = false, onPortfolioChange }
                     </button>
                   ))}
                 </nav>
-                <div className="min-h-0 flex-1 overflow-auto p-4 pb-8">
+                <div className="min-h-0 flex-1 overflow-auto p-4">
                   {dossierTab === 'overview' ? (
                     <>
-                      <div className="rounded border border-kenya-line bg-kenya-surface/80 px-3 py-2.5 dark:bg-[#25282c]/50">
-                        <p className="m-0 text-[10px] font-bold uppercase text-kenya-muted">Total insured value</p>
-                        <p className="mt-0.5 font-serif text-2xl font-semibold text-[#0f2d52] dark:text-[#e8eaed]">
-                          {formatMoney.format(detail.tiv_kes)}
-                        </p>
-                        <div className="mt-2 h-1.5 bg-[#c8ced8] dark:bg-[#3c4043]">
-                          <i
-                            className={`block h-full ${level === 'high' ? 'bg-kenya-coral' : level === 'watch' ? 'bg-kenya-watch' : 'bg-[#17386a] dark:bg-kenya-blue'}`}
-                            style={{ width: `${Math.round((activeLoss?.hazard || 0) * 100)}%` }}
-                          />
+                      <div className="grid grid-cols-2 border-y border-kenya-line py-3">
+                        <div className="px-1 text-center sm:px-2">
+                          <strong className={`block text-lg ${level === 'high' ? 'text-kenya-coral' : level === 'watch' ? 'text-kenya-watch' : 'text-kenya-navy'}`}>
+                            {hazardPct(activeLoss?.hazard)}
+                          </strong>
+                          <span className="text-[11px] uppercase text-kenya-muted">Hazard ({activeTier})</span>
                         </div>
-                        <p className="mt-1.5 text-[11px] text-kenya-muted">Hazard intensity for active map scenario</p>
+                        <div className="px-1 text-center sm:px-2">
+                          <strong className="block text-lg text-kenya-navy">{kes.format(detail.tiv_kes)}</strong>
+                          <span className="text-[11px] uppercase text-kenya-muted">TIV</span>
+                        </div>
                       </div>
-                      <dl className="mt-4 grid grid-cols-2 gap-x-3 gap-y-3">
-                        <div className="border-b border-kenya-line/60 pb-2">
-                          <dt className="text-[10px] font-bold uppercase text-kenya-muted">Rank in book</dt>
-                          <dd className="mt-0.5 text-sm font-semibold text-[#0f2d52] dark:text-[#e8eaed]">
-                            {hazardRank ? `#${hazardRank} / ${sorted.length}` : '—'}
-                          </dd>
+                      <div className="my-3.5 h-1.5 bg-[#c8ced8] dark:bg-[#3c4043]">
+                        <i
+                          className={`block h-full ${level === 'high' ? 'bg-kenya-coral' : level === 'watch' ? 'bg-kenya-watch' : 'bg-[#17386a] dark:bg-kenya-blue'}`}
+                          style={{ width: `${Math.round((activeLoss?.hazard || 0) * 100)}%` }}
+                        />
+                      </div>
+                      <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        <div>
+                          <dt className="text-[10px] font-bold uppercase text-kenya-muted">Hazard rank (book)</dt>
+                          <dd className="mt-1 text-[13px] font-semibold text-kenya-navy">{hazardRank ? `#${hazardRank} of ${sorted.length} listed` : '—'}</dd>
                         </div>
-                        <div className="border-b border-kenya-line/60 pb-2">
-                          <dt className="text-[10px] font-bold uppercase text-kenya-muted">Vs book avg</dt>
-                          <dd className="mt-0.5 text-sm font-semibold text-[#0f2d52] dark:text-[#e8eaed]">
+                        <div>
+                          <dt className="text-[10px] font-bold uppercase text-kenya-muted">Vs book average</dt>
+                          <dd className="mt-1 text-[13px] font-semibold text-kenya-navy">
                             {openRow
-                              ? `${((openRow.hazard - bookAvgHazard) * 100).toFixed(0)} pts ${openRow.hazard >= bookAvgHazard ? 'above' : 'below'}`
+                              ? `${((openRow.hazard - bookAvgHazard) * 100).toFixed(0)} pts ${openRow.hazard >= bookAvgHazard ? 'above' : 'below'} avg`
                               : '—'}
                           </dd>
                         </div>
-                        <div className="border-b border-kenya-line/60 pb-2">
-                          <dt className="text-[10px] font-bold uppercase text-kenya-muted">Map scenario</dt>
-                          <dd className="mt-0.5 text-sm font-semibold text-[#0f2d52] dark:text-[#e8eaed]">
-                            {meta?.tiers?.find((t) => t.id === activeTier)?.label || activeTier}
-                          </dd>
+                        <div>
+                          <dt className="text-[10px] font-bold uppercase text-kenya-muted">Active scenario</dt>
+                          <dd className="mt-1 text-[13px] font-semibold text-kenya-navy">{meta?.tiers?.find((t) => t.id === activeTier)?.label || activeTier}</dd>
                         </div>
-                        <div className="border-b border-kenya-line/60 pb-2">
-                          <dt className="text-[10px] font-bold uppercase text-kenya-muted">Financial EP</dt>
-                          <dd className="mt-0.5 text-sm font-semibold">
-                            <Link href="/ep-curve" className="text-[#1a4a8a] underline-offset-2 hover:underline dark:text-[#8ab4f8]">
-                              Open EP curve
+                        <div>
+                          <dt className="text-[10px] font-bold uppercase text-kenya-muted">Portfolio EP</dt>
+                          <dd className="mt-1 text-[13px] font-semibold text-kenya-navy">
+                            <Link href="/ep-curve" className="text-kenya-blue hover:underline">
+                              Team EP curve →
                             </Link>
                           </dd>
+                        </div>
+                        <div>
+                          <dt className="text-[10px] font-bold uppercase text-kenya-muted">Cedant</dt>
+                          <dd className="mt-1 text-[13px] font-semibold text-kenya-navy">{detail.cedant_name}</dd>
+                        </div>
+                        <div>
+                          <dt className="text-[10px] font-bold uppercase text-kenya-muted">Kenya Re book</dt>
+                          <dd className="mt-1 text-[13px] font-semibold text-kenya-navy">{detail.kenya_re_in_book ? 'Yes — reinsured' : 'No'}</dd>
                         </div>
                       </dl>
                     </>
@@ -1080,7 +1042,7 @@ export default function CatastropheDesk({ shellMode = false, onPortfolioChange }
                                 <td className="border-b border-kenya-line py-1.5">~1-in-{t.return_period_years} yr</td>
                                 <td className="border-b border-kenya-line py-1.5">{hazardPct(t.hazard)}</td>
                                 <td className="border-b border-kenya-line py-1.5">
-                                  {t.damage_ratio != null ? formatPct.format(t.damage_ratio) : '—'}
+                                  {t.damage_ratio != null ? pct.format(t.damage_ratio) : '—'}
                                 </td>
                               </tr>
                             ))}
@@ -1114,7 +1076,7 @@ export default function CatastropheDesk({ shellMode = false, onPortfolioChange }
                       <dl className="grid grid-cols-1 border-t border-kenya-line sm:grid-cols-2">
                         <div className="border-b border-kenya-line py-2 pr-2">
                           <dt className="text-[11px] text-kenya-muted">TIV</dt>
-                          <dd className="mt-0.5 font-semibold text-kenya-navy">{formatMoney.format(detail.tiv_kes)}</dd>
+                          <dd className="mt-0.5 font-semibold text-kenya-navy">{kes.format(detail.tiv_kes)}</dd>
                         </div>
                         <div className="border-b border-kenya-line py-2 pr-2">
                           <dt className="text-[11px] text-kenya-muted">Floor area</dt>

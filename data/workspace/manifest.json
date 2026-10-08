@@ -1,22 +1,96 @@
 {
-  "region_label": "Nairobi",
-  "region_id": "nairobi",
+  "region_label": "Extracted from document",
+  "region_id": "document_exposure",
   "source": "upload",
   "uploads": [
     {
       "type": "exposure",
-      "filename": "exposure_nairobi_with_hazard.csv",
-      "uploaded_at": "2026-10-08T19:58:35.689Z"
+      "filename": "CONFIDENTIAL REINSURANCE PLACEMENT - Google Docs.pdf",
+      "uploaded_at": "2026-10-08T21:21:18.524Z"
+    },
+    {
+      "type": "document",
+      "filename": "CONFIDENTIAL_REINSURANCE_PLACEMENT_-_Google_Docs.txt",
+      "uploaded_at": "2026-10-08T21:21:18.507Z",
+      "chars": 22247
+    },
+    {
+      "type": "document",
+      "filename": "CONFIDENTIAL_REINSURANCE_PLACEMENT_-_Google_Docs.txt",
+      "uploaded_at": "2026-10-08T21:15:26.204Z",
+      "chars": 22247
+    },
+    {
+      "type": "document",
+      "filename": "CONFIDENTIAL_REINSURANCE_PLACEMENT_-_Google_Docs.txt",
+      "uploaded_at": "2026-10-08T21:15:00.846Z",
+      "chars": 22247
+    },
+    {
+      "type": "exposure",
+      "filename": "CONFIDENTIAL_REINSURANCE_PLACEMENT_-_Google_Docs.txt",
+      "uploaded_at": "2026-10-08T21:14:27.367Z"
+    },
+    {
+      "type": "exposure",
+      "filename": "CONFIDENTIAL_REINSURANCE_PLACEMENT_-_Google_Docs.txt",
+      "uploaded_at": "2026-10-08T21:10:24.185Z"
     },
     {
       "type": "exposure",
       "filename": "exposure_mombasa_with_hazard.csv",
-      "uploaded_at": "2026-10-08T19:55:55.838Z"
+      "uploaded_at": "2026-10-08T20:51:23.977Z"
     },
     {
       "type": "exposure",
-      "filename": "exposure_nzoia_synthetic.csv",
-      "uploaded_at": "2026-10-08T15:22:25.549Z"
+      "filename": "exposure_mombasa_with_hazard.csv",
+      "uploaded_at": "2026-10-08T20:50:20.036Z"
+    },
+    {
+      "type": "exposure",
+      "filename": "exposure_nairobi_with_hazard.csv",
+      "uploaded_at": "2026-10-08T20:48:50.883Z"
+    },
+    {
+      "type": "exposure",
+      "filename": "exposure_mombasa_with_hazard.csv",
+      "uploaded_at": "2026-10-08T20:43:07.541Z"
+    },
+    {
+      "type": "exposure",
+      "filename": "demo.csv",
+      "uploaded_at": "2026-10-08T20:32:03.110Z"
+    },
+    {
+      "type": "exposure",
+      "filename": "demo.csv",
+      "uploaded_at": "2026-10-08T20:30:41.146Z"
+    },
+    {
+      "type": "exposure",
+      "filename": "demo.csv",
+      "uploaded_at": "2026-10-08T20:28:44.639Z"
+    },
+    {
+      "type": "exposure",
+      "filename": "demo.csv",
+      "uploaded_at": "2026-10-08T20:28:25.616Z"
+    },
+    {
+      "type": "exposure",
+      "filename": "exposure_lusaka_with_hazard.csv",
+      "uploaded_at": "2026-10-08T19:50:27.612Z"
+    },
+    {
+      "type": "exposure",
+      "filename": "exposure_nairobi_with_hazard.csv",
+      "uploaded_at": "2026-10-08T15:16:36.541Z"
+    },
+    {
+      "type": "document",
+      "filename": "CONFIDENTIAL_REINSURANCE_PLACEMENT_-_Google_Docs.txt",
+      "uploaded_at": "2026-10-08T15:12:02.833Z",
+      "chars": 22247
     },
     {
       "type": "exposure",
@@ -32,26 +106,13 @@
       "type": "exposure",
       "filename": "exposure_mombasa_with_hazard.csv",
       "uploaded_at": "2026-10-08T13:25:07.407Z"
-    },
-    {
-      "type": "exposure",
-      "filename": "exposure_nairobi_with_hazard.csv",
-      "uploaded_at": "2026-10-08T11:45:13.150Z"
-    },
-    {
-      "type": "exposure",
-      "filename": "exposure_nairobi_with_hazard.csv",
-      "uploaded_at": "2026-10-08T11:43:34.042Z"
-    },
-    {
-      "type": "exposure",
-      "filename": "exposure_nairobi_with_hazard.csv",
-      "uploaded_at": "2026-10-08T10:12:30.993Z"
     }
   ],
-  "exposure_rows": 600,
-  "updated_at": "2026-10-08T19:58:35.690Z",
-  "currency_code": "KES",
-  "currency_locale": "en-KE",
-  "country_label": "Kenya"
+  "exposure_rows": 1,
+  "updated_at": "2026-10-08T21:21:18.524Z",
+  "auto_ep_curve": {
+    "source": "local_proxy",
+    "points": 5
+  },
+  "generated_ep_csv_filename": "ep_curve_model.csv"
 }

@@ -4,19 +4,19 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import CatDisclosures from '@/components/CatDisclosures';
 import CatEpAepChart from '@/components/CatEpAepChart';
+import { useChatDrawer } from '@/components/ChatDrawerProvider';
 import DualEpChart from '@/components/DualEpChart';
 import EpViewSwitch from '@/components/EpViewSwitch';
 import EventLossTable from '@/components/EventLossTable';
 import ModelEpUpload from '@/components/ModelEpUpload';
 import VulnerabilityChart from '@/components/VulnerabilityChart';
-import { useWorkspaceFormat } from '@/components/WorkspaceFormatProvider';
 import { fetchRagJson } from '@/lib/api';
-import EpChartGuide, { EpChartSection } from '@/components/EpChartGuide';
-import { EP_CHART_IDS, listAvailableGuides } from '@/lib/ep-chart-guide';
-import { btnBase, cn } from '@/lib/buttons';
+import { btnBase, btnPrimary, cn } from '@/lib/buttons';
+
+const kes = new Intl.NumberFormat('en-KE', { style: 'currency', currency: 'KES', maximumFractionDigits: 0 });
 
 export default function EpCurvePage() {
-  const { formatMoney, tivLabel, currencyCode, meta: formatMeta } = useWorkspaceFormat();
+  const { openChatWithPrompt } = useChatDrawer();
   const [meta, setMeta] = useState(null);
   const [curve, setCurve] = useState(null);
   const [summary, setSummary] = useState(null);
@@ -25,8 +25,6 @@ export default function EpCurvePage() {
   const [epView, setEpView] = useState('gross');
   const [vulnerability, setVulnerability] = useState(null);
   const [err, setErr] = useState('');
-  const [guideOpen, setGuideOpen] = useState(true);
-  const [guideChartId, setGuideChartId] = useState(EP_CHART_IDS.catAep);
 
   const loadCurve = useCallback(() => {
     fetchRagJson('/api/nairobi/loss-curve')
@@ -128,98 +126,57 @@ export default function EpCurvePage() {
   const extreme = primaryPts?.find((p) => p.return_period_years >= 100) || primaryPts?.[primaryPts.length - 1];
   const cat100 = cat?.summary_100yr;
 
-  const guideIds = useMemo(
-    () =>
-      listAvailableGuides({
-        hasCat,
-        hasLandscape,
-        hasExternal,
-        hasVulnerability: Boolean(vulnerability?.curves?.length),
-      }),
-    [hasCat, hasLandscape, hasExternal, vulnerability?.curves?.length]
-  );
+  const curvePrompt = useCallback(() => {
+    const sourceLabel =
+      activeView?.label ||
+      modelLabel ||
+      workspace?.model_team_label ||
+      (hasCat ? 'Portfolio CAT model' : hasExternal ? 'team EP model' : 'current EP curve');
+    const points = (activeView?.points || curve?.ep_curve || []).slice(0, 5);
+    const dataText = points.length
+      ? points.map((p) => `${p.return_period_years}yr=${kes.format(p.loss_kes)}`).join('; ')
+      : 'no points loaded yet';
 
-  useEffect(() => {
-    if (!guideIds.length) return;
-    setGuideChartId((current) => (guideIds.includes(current) ? current : guideIds[0]));
-  }, [guideIds.join(',')]);
-
-  const liveGuideHint = useMemo(() => {
-    if (guideChartId === EP_CHART_IDS.catKpis && cat100) {
-      return `Live: 100-yr gross ${formatMoney.format(cat100.gross_loss_kes)} · net ${formatMoney.format(cat100.net_loss_kes)}`;
-    }
-    if (guideChartId === EP_CHART_IDS.catReturnPeriod && cat?.ai_uplift_gross_pct != null) {
-      return `Live: AI rectifier uplift vs baseline ${cat.ai_uplift_gross_pct >= 0 ? '+' : ''}${(cat.ai_uplift_gross_pct ?? 0).toFixed(1)}% at 100 yr`;
-    }
-    if (guideChartId === EP_CHART_IDS.landscape && extreme && hasLandscape) {
-      const pt = landscapePts?.find((p) => p.return_period_years >= 100) || landscapePts?.[landscapePts.length - 1];
-      return pt ? `Live: 100-yr hazard index ${formatMoney.format(pt.loss_kes)}` : null;
-    }
-    if (guideChartId === EP_CHART_IDS.teamEp && extreme) {
-      return `Live: 1-in-${extreme.return_period_years} yr (${epView}) ${formatMoney.format(extreme.loss_kes)}`;
-    }
-    if (guideChartId === EP_CHART_IDS.catElt && cat?.elt?.length) {
-      return `Live: ${cat.elt.length} scenario tiers in table · ${useAi ? 'AI rectified' : 'baseline'} mode`;
-    }
-    return null;
-  }, [
-    guideChartId,
-    cat100,
-    cat,
-    extreme,
-    epView,
-    formatMoney,
-    hasLandscape,
-    landscapePts,
-    useAi,
-  ]);
-
-  const focusGuide = useCallback((id) => setGuideChartId(id), []);
+    return `Explain this EP curve in plain English for the current ${sourceLabel}. Use the return-period data: ${dataText}. Summarise what the curve means, which return periods are most severe, and how the loss grows as the exceedance probability falls.`;
+  }, [activeView, curve, hasCat, hasExternal, modelLabel, workspace]);
 
   return (
-    <div className="h-full overflow-y-auto overflow-x-hidden bg-kenya-surface p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:p-6">
+    <div className="h-full overflow-y-auto bg-kenya-surface p-4 sm:p-6">
       <div className="mx-auto max-w-4xl space-y-6">
-        <header className="min-w-0">
-          <h1 className="font-serif text-xl font-semibold text-kenya-navy sm:text-2xl">EP curve & models</h1>
-          <p className="mt-1 text-sm text-kenya-muted">
-            {meta?.region_label || 'Portfolio'} ·{' '}
-            {summary ? `${formatMoney.format(summary.total_tiv_kes)} ${tivLabel}` : '…'}
-          </p>
-          <p className="mt-2 text-[11px] text-kenya-muted">
-            Portfolio CAT from Linus engine (active exposure CSV) · optional team EP CSV override ·{' '}
-            <Link href="/settings" className="font-semibold text-kenya-blue hover:underline">
-              model controls
-            </Link>
-          </p>
+        <header>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h1 className="font-serif text-2xl font-semibold text-kenya-navy">EP curve & models</h1>
+              <p className="mt-1 text-sm text-kenya-muted">
+                {meta?.region_label || 'Portfolio'} · {summary ? kes.format(summary.total_tiv_kes) : '…'} TIV
+              </p>
+              <p className="mt-2 text-[11px] text-kenya-muted">
+                Portfolio CAT from Linus engine (active exposure CSV) · optional team EP CSV override ·{' '}
+                <Link href="/settings" className="font-semibold text-kenya-blue hover:underline">
+                  model controls
+                </Link>
+              </p>
+            </div>
+            <button
+              type="button"
+              className={cn(btnPrimary, 'normal-case')} 
+              onClick={() => openChatWithPrompt(curvePrompt())}
+            >
+              Explain this curve
+            </button>
+          </div>
         </header>
 
         {err ? <p className="text-sm text-kenya-coral">{err}</p> : null}
 
-        <EpChartGuide
-          open={guideOpen}
-          onOpenChange={setGuideOpen}
-          activeId={guideChartId}
-          onSelect={setGuideChartId}
-          availableIds={guideIds}
-          liveHint={liveGuideHint}
-        />
-
-        {formatMeta?.cat_data_scope && formatMeta.region_id !== 'nairobi' ? (
-          <p className="rounded-lg border border-kenya-line bg-kenya-panel px-3 py-2 text-[11px] text-kenya-muted">
-            <strong className="text-kenya-navy">{formatMeta.region_label}</strong> · portfolio map &amp; CAT use your{' '}
-            uploaded CSV hazards. GeoTIFF sampling &amp; Nairobi drainage hotspots apply only for Nairobi engine
-            coverage; elsewhere underwriting may use synthetic hazard at point.
-          </p>
-        ) : null}
-
         {hasCat ? (
-          <EpChartSection
-            id={EP_CHART_IDS.catKpis}
-            activeId={guideChartId}
-            onSelect={setGuideChartId}
-            className="space-y-4 p-1 ring-kenya-line/80"
-          >
-            <h2 className="font-serif text-lg font-semibold text-kenya-navy">Portfolio catastrophe analytics (CAT)</h2>
+          <div className="space-y-4 rounded-2xl ring-1 ring-kenya-line/80">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="font-serif text-lg font-semibold text-kenya-navy">Portfolio catastrophe analytics (CAT)</h2>
+              <span className="rounded-full border border-kenya-blue/40 bg-kenya-blue/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-kenya-blue">
+                Modeled EP
+              </span>
+            </div>
             {cat.hotspot_assets != null ? (
               <p className="text-[11px] text-kenya-muted">
                 AI drainage: <strong>{cat.hotspot_assets}</strong> assets in hotspot corridors · 100-yr gross uplift vs
@@ -234,43 +191,30 @@ export default function EpCurvePage() {
               <div className="grid gap-3 sm:grid-cols-3">
                 <div className="border border-kenya-line bg-kenya-panel p-4">
                   <p className="text-[10px] font-bold uppercase text-kenya-muted">100-yr GUL</p>
-                  <p className="mt-1 text-lg font-semibold text-kenya-navy">{formatMoney.format(cat100.ground_up_loss_kes)}</p>
+                  <p className="mt-1 text-lg font-semibold text-kenya-navy">{kes.format(cat100.ground_up_loss_kes)}</p>
                 </div>
                 <div className="border border-kenya-line bg-kenya-panel p-4">
                   <p className="text-[10px] font-bold uppercase text-kenya-muted">100-yr gross</p>
-                  <p className="mt-1 text-lg font-semibold text-kenya-navy">{formatMoney.format(cat100.gross_loss_kes)}</p>
+                  <p className="mt-1 text-lg font-semibold text-kenya-navy">{kes.format(cat100.gross_loss_kes)}</p>
                 </div>
                 <div className="border border-kenya-line bg-kenya-panel p-4">
                   <p className="text-[10px] font-bold uppercase text-kenya-muted">100-yr net</p>
-                  <p className="mt-1 text-lg font-semibold text-kenya-navy">{formatMoney.format(cat100.net_loss_kes)}</p>
+                  <p className="mt-1 text-lg font-semibold text-kenya-navy">{kes.format(cat100.net_loss_kes)}</p>
                 </div>
               </div>
             ) : null}
-            <EpChartSection id={EP_CHART_IDS.catAep} activeId={guideChartId} onSelect={setGuideChartId} className="p-0 ring-0">
-              <CatEpAepChart
-                baselineElt={cat.elt_baseline}
-                aiElt={cat.elt_ai}
-                useAi={useAi}
-                currencyCode={currencyCode}
-                onFocus={() => focusGuide(EP_CHART_IDS.catAep)}
-              />
-            </EpChartSection>
-            <EpChartSection id={EP_CHART_IDS.catReturnPeriod} activeId={guideChartId} onSelect={setGuideChartId} className="p-0 ring-0">
-              <DualEpChart
-                series={catSeries}
-                formatLoss={(v) => formatMoney.format(v)}
-                title="Portfolio loss by return period (CAT)"
-                subtitle="Solid = AI rectified · dashed = baseline — click legend to toggle lines. Hover points for AEP & loss."
-                onFocus={() => focusGuide(EP_CHART_IDS.catReturnPeriod)}
-              />
-            </EpChartSection>
-            <EpChartSection id={EP_CHART_IDS.catElt} activeId={guideChartId} onSelect={setGuideChartId} className="p-0 ring-0">
-              <EventLossTable
-                elt={cat.elt}
-                caption={useAi ? 'Showing AI-rectified ELT' : 'Showing baseline ELT (AI off in Settings)'}
-              />
-            </EpChartSection>
-          </EpChartSection>
+            <CatEpAepChart baselineElt={cat.elt_baseline} aiElt={cat.elt_ai} useAi={useAi} />
+            <DualEpChart
+              series={catSeries}
+              formatLoss={(v) => kes.format(v)}
+              title="Portfolio loss by return period (CAT)"
+              subtitle="Solid = AI rectified · dashed = baseline proxy — same tiers as map scenarios."
+            />
+            <EventLossTable
+              elt={cat.elt}
+              caption={useAi ? 'Showing AI-rectified ELT' : 'Showing baseline ELT (AI off in Settings)'}
+            />
+          </div>
         ) : (
           <div className="rounded-2xl border border-kenya-line bg-kenya-panel p-4 text-sm text-kenya-muted">
             Start the Python CAT service and set <code className="text-xs">CAT_MODEL_URL</code> to see portfolio EP/ELT
@@ -288,76 +232,71 @@ export default function EpCurvePage() {
         />
 
         {vulnerability?.curves?.length ? (
-          <EpChartSection
-            id={EP_CHART_IDS.vulnerability}
-            activeId={guideChartId}
-            onSelect={setGuideChartId}
-            className="space-y-2 p-1"
-          >
+          <div className="space-y-2">
             <h2 className="font-serif text-lg font-semibold text-kenya-navy">Vulnerability — damage matrix</h2>
             <p className="text-[11px] text-kenya-muted">
               Source: <code className="text-[10px]">{vulnerability.matrix_file || vulnerability.source}</code>
             </p>
             <VulnerabilityChart curves={vulnerability.curves} />
-          </EpChartSection>
+          </div>
         ) : null}
 
         {hasLandscape ? (
-          <EpChartSection
-            id={EP_CHART_IDS.landscape}
-            activeId={guideChartId}
-            onSelect={setGuideChartId}
-            className="space-y-2 p-1"
-          >
-            <h2 className="font-serif text-lg font-semibold text-kenya-navy">Hazard landscape (exposure CSV)</h2>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="font-serif text-lg font-semibold text-kenya-navy">Hazard landscape (exposure CSV)</h2>
+              <span className="rounded-full border border-amber-500/40 bg-amber-100 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-amber-700">
+                Proxy curve
+              </span>
+            </div>
             <p className="text-[11px] text-kenya-muted">
-              Σ(TIV × hazard) per tier — exposure index, not CAT financial loss.
+              Σ(TIV × hazard) per tier — exposure index, not modeled financial loss. This is a proxy curve only.
             </p>
             <DualEpChart
               series={landscapeSeries}
-              formatLoss={(v) => formatMoney.format(v)}
+              formatLoss={(v) => kes.format(v)}
               singleSeries
               title="Hazard landscape"
               subtitle="Updates when you upload exposure on the map."
-              onFocus={() => focusGuide(EP_CHART_IDS.landscape)}
             />
-          </EpChartSection>
+          </div>
         ) : null}
 
         {hasExternal ? (
-          <EpChartSection
-            id={EP_CHART_IDS.teamEp}
-            activeId={guideChartId}
-            onSelect={setGuideChartId}
-            className="space-y-3 p-1"
-          >
-            <h2 className="font-serif text-lg font-semibold text-kenya-navy">Optional team EP CSV</h2>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="font-serif text-lg font-semibold text-kenya-navy">Optional team EP CSV</h2>
+              <span className="rounded-full border border-kenya-blue/40 bg-kenya-blue/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-kenya-blue">
+                Modeled EP
+              </span>
+            </div>
+            <button
+              type="button"
+              className={cn(btnBase, 'normal-case')}
+              onClick={() => openChatWithPrompt(curvePrompt())}
+            >
+              Explain this curve
+            </button>
             <EpViewSwitch available={viewsAvailable} value={epView} onChange={setEpView} />
             {extreme ? (
               <p className="text-xs text-kenya-muted">
-                1-in-{extreme.return_period_years} yr ({epView}): {formatMoney.format(extreme.loss_kes)}
+                1-in-{extreme.return_period_years} yr ({epView}): {kes.format(extreme.loss_kes)}
               </p>
             ) : null}
             <DualEpChart
               series={chartSeries}
-              formatLoss={(v) => formatMoney.format(v)}
+              formatLoss={(v) => kes.format(v)}
               uncertaintyBand={uncertaintyBand}
               singleSeries
-              subtitle="External team output — separate from live CAT engine above."
-              onFocus={() => focusGuide(EP_CHART_IDS.teamEp)}
+              subtitle="External team output — modeled financial EP, separate from the hazard exposure proxy above."
             />
-          </EpChartSection>
+          </div>
         ) : null}
 
-        <EpChartSection
-          id={EP_CHART_IDS.disclosures}
-          activeId={guideChartId}
-          onSelect={setGuideChartId}
-          className="space-y-2 p-1"
-        >
+        <div className="space-y-2">
           <h2 className="font-serif text-lg font-semibold text-kenya-navy">Model assumptions & disclosures</h2>
           <CatDisclosures />
-        </EpChartSection>
+        </div>
 
         <Link href="/map" className={cn(btnBase, 'inline-flex no-underline normal-case')}>
           Back to map
