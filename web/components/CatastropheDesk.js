@@ -421,14 +421,12 @@ export default function CatastropheDesk({ shellMode = false, onPortfolioChange }
       try {
         const fetches = [
           fetchRagJson(`/api/nairobi/exposure?tier=${encodeURIComponent(activeTier)}`),
+          fetchRagJson('/api/nairobi/loss-curve'),
         ];
-        if (!shellMode) {
-          fetches.push(fetchRagJson('/api/nairobi/loss-curve'));
-        }
         const results = await Promise.all(fetches);
         if (cancelled) return;
         const exposure = results[0];
-        if (!shellMode && results[1]) setLossCurve(results[1]);
+        if (results[1]) setLossCurve(results[1]);
         const locs = exposure.locations || [];
         setLocations(locs);
         updateExposureSource(locs);
@@ -762,30 +760,38 @@ export default function CatastropheDesk({ shellMode = false, onPortfolioChange }
               {pitch3d ? '2D' : '3D'}
             </button>
           </div>
-          {!shellMode ? (
-            <section className="absolute right-3 top-3 z-[500] hidden w-[min(320px,calc(100%-1.5rem))] border border-kenya-line bg-kenya-panel p-3 sm:block">
-              <h3 className="m-0 font-serif text-base font-semibold text-kenya-navy">Exceedance curve</h3>
-              <p className="mt-1 text-[11px] font-medium text-kenya-ink/90">
-                {epNote
-                  ? `${epNote.label}: ${kes.format(epNote.portfolio_loss_kes)} (${pct.format(epNote.loss_pct_of_tiv)} of TIV)`
-                  : 'Portfolio loss by tier'}
-              </p>
-              <EpLossLineChart
-                epCurve={lossCurve?.ep_curve}
-                maxLoss={maxEp}
-                activeReturnPeriodYears={activeReturnPeriodYears}
-                formatLoss={(v) => kes.format(v)}
-              />
-              <dl className="mt-2 grid gap-1">
-                {(lossCurve?.points || []).map((p) => (
-                  <div key={p.tier} className="flex justify-between text-[11px]">
-                    <dt className={p.tier === activeTier ? 'font-bold text-kenya-navy' : 'text-kenya-muted'}>{p.label}</dt>
-                    <dd className="m-0 font-semibold text-kenya-navy">{kes.format(p.portfolio_loss_kes)}</dd>
-                  </div>
-                ))}
-              </dl>
-            </section>
-          ) : null}
+          <section
+            className={`absolute right-3 z-[500] hidden w-[min(320px,calc(100%-1.5rem))] border border-kenya-line bg-kenya-panel p-3 sm:block ${
+              shellMode ? 'bottom-3 top-auto' : 'top-3'
+            }`}
+          >
+            <h3 className="m-0 font-serif text-base font-semibold text-kenya-navy">Hazard landscape</h3>
+            <p className="mt-1 text-[10px] leading-snug text-kenya-muted">
+              From current exposure CSV · same tiers as map scenario · not financial loss
+            </p>
+            <p className="mt-1 text-[11px] font-medium text-kenya-ink/90">
+              {epNote
+                ? `${epNote.label}: avg hazard ${pct.format(epNote.loss_pct_of_tiv)} · index ${kes.format(epNote.hazard_weighted_tiv_kes ?? epNote.portfolio_loss_kes)}`
+                : 'Upload exposure CSV to build curve'}
+            </p>
+            <EpLossLineChart
+              epCurve={lossCurve?.ep_curve}
+              maxLoss={maxEp}
+              activeReturnPeriodYears={activeReturnPeriodYears}
+              formatLoss={(v) => kes.format(v)}
+            />
+            <Link href="/ep-curve" className={cn(btnBase, btnSm, 'mt-2 inline-flex w-full justify-center no-underline')}>
+              Full EP & team model
+            </Link>
+            <dl className="mt-2 grid gap-1">
+              {(lossCurve?.points || []).map((p) => (
+                <div key={p.tier} className="flex justify-between text-[11px]">
+                  <dt className={p.tier === activeTier ? 'font-bold text-kenya-navy' : 'text-kenya-muted'}>{p.label}</dt>
+                  <dd className="m-0 font-semibold text-kenya-navy">{pct.format(p.avg_hazard ?? p.loss_pct_of_tiv)}</dd>
+                </div>
+              ))}
+            </dl>
+          </section>
         </main>
 
         <aside
@@ -926,6 +932,7 @@ export default function CatastropheDesk({ shellMode = false, onPortfolioChange }
                               <th className="border-b border-kenya-line py-1.5 text-left">Tier</th>
                               <th className="border-b border-kenya-line py-1.5 text-left">Return period</th>
                               <th className="border-b border-kenya-line py-1.5 text-left">Hazard</th>
+                              <th className="border-b border-kenya-line py-1.5 text-left">Damage ratio</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -934,13 +941,17 @@ export default function CatastropheDesk({ shellMode = false, onPortfolioChange }
                                 <td className="border-b border-kenya-line py-1.5">{t.label}</td>
                                 <td className="border-b border-kenya-line py-1.5">~1-in-{t.return_period_years} yr</td>
                                 <td className="border-b border-kenya-line py-1.5">{hazardPct(t.hazard)}</td>
+                                <td className="border-b border-kenya-line py-1.5">
+                                  {t.damage_ratio != null ? pct.format(t.damage_ratio) : '—'}
+                                </td>
                               </tr>
                             ))}
                           </tbody>
                         </table>
                       </div>
                       <p className="mt-3 text-[11px] text-kenya-muted">
-                        Ground-up losses: upload team output on{' '}
+                        Damage ratios from the vulnerability matrix for{' '}
+                        <strong className="font-semibold text-kenya-navy">{detail.housing_label}</strong>. Full curves on{' '}
                         <Link href="/ep-curve" className="font-semibold text-kenya-blue hover:underline">
                           EP curve
                         </Link>

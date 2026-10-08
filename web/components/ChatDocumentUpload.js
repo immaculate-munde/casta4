@@ -5,6 +5,27 @@ import { IconUpload } from '@/components/NavIcons';
 import { fetchRagJson, postRagJson } from '@/lib/api';
 import { btnPrimary, cn } from '@/lib/buttons';
 
+function readFileAsUploadPayload(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('Could not read file'));
+    reader.onload = () => {
+      const result = reader.result;
+      if (typeof result !== 'string' || !result.includes(',')) {
+        reject(new Error('Could not read file'));
+        return;
+      }
+      const file_base64 = result.split(',')[1];
+      resolve({
+        filename: file.name,
+        content_type: file.type || undefined,
+        file_base64,
+      });
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
 export default function ChatDocumentUpload() {
   const inputId = useId();
   const [docs, setDocs] = useState([]);
@@ -29,17 +50,8 @@ export default function ChatDocumentUpload() {
     setBusy(true);
     setNote('');
     try {
-      const text = await file.text();
-      const name = file.name.toLowerCase();
-      if (name.endsWith('.pdf')) {
-        setNote('PDF: paste text export or use .txt for now.');
-        setBusy(false);
-        return;
-      }
-      const data = await postRagJson('/api/workspace/document', {
-        filename: file.name.replace(/\.[^.]+$/, '') + '.txt',
-        text,
-      });
+      const payload = await readFileAsUploadPayload(file);
+      const data = await postRagJson('/api/workspace/document', payload);
       setNote(`Added ${data.filename} — ReAgent will cite it in answers.`);
       await refresh();
     } catch (e) {
@@ -63,12 +75,11 @@ export default function ChatDocumentUpload() {
         )}
       >
         <IconUpload className="h-4 w-4 shrink-0" />
-        {busy ? 'Uploading…' : 'Upload document (.txt)'}
+        {busy ? 'Uploading…' : 'Upload file (any type)'}
       </label>
       <input
         id={inputId}
         type="file"
-        accept=".txt,text/plain"
         className="sr-only"
         disabled={busy}
         onChange={(e) => {
@@ -76,6 +87,9 @@ export default function ChatDocumentUpload() {
           e.target.value = '';
         }}
       />
+      <p className="mt-1.5 px-1 text-[10px] leading-snug" style={{ color: 'var(--chat-text-muted)' }}>
+        TXT, CSV, JSON, Markdown, HTML, PDF, and other UTF-8 text. PDF text is extracted on the server.
+      </p>
       {note ? (
         <p className="mt-2 px-1 text-[11px] leading-snug" style={{ color: 'var(--chat-text-muted)' }}>
           {note}

@@ -41,7 +41,8 @@ export default function ModelEpUpload({ onSuccess, modelLabel, onModelLabelChang
       <p className="mt-1 text-[11px] leading-relaxed text-kenya-muted">
         Upload your team&apos;s EP / loss output (CSV). Required:{' '}
         <code className="text-[10px]">return_period_years, loss_kes</code>. Optional:{' '}
-        <code className="text-[10px]">loss_net_kes, loss_p05_kes, loss_p95_kes, aep, label</code>.
+        <code className="text-[10px]">loss_net_kes, loss_p05_kes, loss_p95_kes, aep, label</code>. Net and p5/p95
+        columns enable the Gross / Net / Uncertainty switch on the chart.
       </p>
       <label className="mt-3 block text-[11px] font-semibold text-[#0f2d52] dark:text-[#e8eaed]" htmlFor="ep-model-label">
         Model name
