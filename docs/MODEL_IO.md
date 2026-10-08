@@ -33,3 +33,15 @@ The UI maps one row set into three **switchable views**:
 | Uncertainty band | `loss_p05_kes`, `loss_p95_kes` (gross line + shaded band) |
 
 Sample file: `docs/sample_ep_curve_model.csv`
+
+## Vulnerability matrix
+
+**Bundled:** `data/team_a_nairobi/vulnerability_damage_matrix.csv`
+
+**Optional override:** place `vulnerability_matrix.csv` in workspace `active/` with columns:
+
+`housing_class`, `hazard_severity` (0–1), `damage_ratio` (0–1)
+
+**API:** `GET /api/nairobi/vulnerability` — curves plus which housing classes appear in the current exposure CSV.
+
+The EP curve page charts the matrix; map location scenarios show interpolated damage ratio per tier.
