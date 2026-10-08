@@ -12,7 +12,9 @@ import { parse } from 'csv-parse/sync';
 import { cleanLlmAnswer } from './lib/clean-llm-answer.js';
 import { formatRetrievalResults } from './lib/rag-retrieval.js';
 import nairobiRouter from './lib/nairobi-routes.js';
+import workspaceRouter from './lib/workspace-routes.js';
 import { loadPortfolio, computePortfolioSummary, computeLossCurve } from './lib/nairobi-flood-cat.js';
+import { loadUploadedDocTexts } from './lib/workspace-store.js';
 
 const app = express();
 app.set('trust proxy', 1);
@@ -34,6 +36,7 @@ app.use(
 );
 
 app.use('/api/nairobi', nairobiRouter);
+app.use('/api/workspace', express.json({ limit: '15mb' }), workspaceRouter);
 
 let vectorStore;
 
@@ -159,14 +162,29 @@ async function runRag(question) {
   const results = await vectorStore.similaritySearch(question, 6);
   const { context, sources } = formatRetrievalResults(results);
 
-  const prompt = `Retrieved context:\n${context.join('\n\n')}\n\nUser question: ${question}\n\nAnswer:`;
+  const userDocs = await loadUploadedDocTexts();
+  const userBlocks = userDocs.map(
+    (d) => `[User upload: ${d.filename}]\n${d.text.slice(0, 12_000)}`
+  );
+  const mergedContext = [...context, ...userBlocks].slice(0, 12);
+  const mergedSources = [
+    ...sources,
+    ...userDocs.map((d, i) => ({
+      id: `upload-${i}`,
+      file: d.filename,
+      kind: 'upload',
+      excerpt: d.text.slice(0, 120),
+    })),
+  ];
+
+  const prompt = `Retrieved context:\n${mergedContext.join('\n\n')}\n\nUser question: ${question}\n\nAnswer:`;
   const messages = [
     { role: 'system', content: buildSystemPrompt(question) },
     { role: 'user', content: prompt },
   ];
 
   const answer = await callGroq(messages);
-  return { context, sources, answer };
+  return { context: mergedContext, sources: mergedSources, answer };
 }
 
 async function handleRag(req, res) {
@@ -303,15 +321,15 @@ app.get('/api/dashboard', async (_req, res) => {
     }));
 
     // Load flood portfolio
-    const { exposure } = await loadPortfolio();
+    const { exposure, hotspots } = await loadPortfolio();
     const summary = computePortfolioSummary(exposure);
-    const lossCurve = computeLossCurve(exposure);
+    const lossCurve = await computeLossCurve(exposure, hotspots, 'rectified');
     const moderateLoss = lossCurve.points.find(p => p.tier === 'moderate');
     const severeLoss = lossCurve.points.find(p => p.tier === 'severe');
 
     const { enrichRow } = await import('./lib/nairobi-flood-cat.js');
-    const topRisk = exposure
-      .map(row => enrichRow(row, 'moderate'))
+    const enriched = await Promise.all(exposure.map((row) => enrichRow(row, 'moderate')));
+    const topRisk = enriched
       .sort((a, b) => b.hazard - a.hazard)
       .slice(0, 3)
       .map(r => ({
