@@ -33,7 +33,6 @@ const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 app.use(helmet());
 app.disable('x-powered-by');
 app.use(cors());
-app.use(express.json({ limit: '10kb' }));
 app.use(
   rateLimit({
     windowMs: 60 * 1000,
@@ -43,8 +42,12 @@ app.use(
   })
 );
 
-app.use('/api/nairobi', nairobiRouter);
+/** Large CSV uploads — must be registered before the global 10kb JSON parser. */
 app.use('/api/workspace', express.json({ limit: '15mb' }), workspaceRouter);
+
+app.use(express.json({ limit: '10kb' }));
+
+app.use('/api/nairobi', nairobiRouter);
 
 let vectorStore;
 
@@ -386,7 +389,8 @@ Promise.all([loadPortfolio(), loadRAG()])
       console.log(`  POST /rag  — ask.js and CLI (pure RAG)`);
       console.log(`  POST /ask  — Netlify / web alias`);
       console.log(`  GET  /health`);
-      console.log(`  GET  /api/nairobi/* — Nairobi flood portfolio API`);
+      console.log(`  GET  /api/nairobi/* — flood portfolio API`);
+      console.log(`  POST /api/workspace/exposure — CSV (core cols + hazard or hazard_score_moderate)`);
     });
   })
   .catch((err) => {

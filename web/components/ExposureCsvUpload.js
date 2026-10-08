@@ -2,7 +2,7 @@
 
 import { useId, useState } from 'react';
 import { IconUpload } from '@/components/NavIcons';
-import { fetchRagJson } from '@/lib/api';
+import { fetchRagJson, postRagJson } from '@/lib/api';
 import { btnBase, btnPrimary, btnSm, cn } from '@/lib/buttons';
 
 const inputClass =
@@ -22,17 +22,11 @@ export default function ExposureCsvUpload({ onSuccess, compact = false }) {
     setMsg('');
     try {
       const csv = await file.text();
-      const res = await fetch('/api/workspace/exposure', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          csv,
-          filename: file.name,
-          region_label: regionLabel.trim() || undefined,
-        }),
+      const data = await postRagJson('/api/workspace/exposure', {
+        csv,
+        filename: file.name,
+        region_label: regionLabel.trim() || undefined,
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Upload failed');
       setMsg(`Uploaded ${data.manifest?.exposure_rows ?? ''} locations. Map will refresh.`);
       onSuccess?.(data);
     } catch (e) {
@@ -80,8 +74,10 @@ export default function ExposureCsvUpload({ onSuccess, compact = false }) {
         }}
       />
       {!compact ? (
-        <p className="mt-2 text-[10px] text-kenya-muted">
-          Requires loc_id, lat, lon, housing_class, tiv_kes, hazard_score_* (5 tiers)
+        <p className="mt-2 text-[10px] leading-snug text-kenya-muted">
+          Required: loc_id, lat, lon, housing_class, tiv_kes. Hazard: all five hazard_score_* columns, or one{' '}
+          <code className="text-[9px]">hazard</code> / <code className="text-[9px]">hazard_score_moderate</code>{' '}
+          (0–1) — we copy to every tier if tiers are missing.
         </p>
       ) : null}
       {err ? <p className="mt-2 text-[11px] font-medium text-kenya-coral">{err}</p> : null}
@@ -90,11 +86,12 @@ export default function ExposureCsvUpload({ onSuccess, compact = false }) {
         <button
           type="button"
           className={cn(btnBase, btnSm, 'mt-2 normal-case')}
-          onClick={() =>
-            fetchRagJson('/api/workspace/exposure-schema').then((s) =>
-              setMsg(`Required: ${(s.required_columns || []).join(', ')}`)
-            )
-          }
+          onClick={() => {
+            setErr('');
+            fetchRagJson('/api/workspace/exposure-schema')
+              .then((s) => setMsg(`Required: ${(s.required_columns || []).join(', ')}`))
+              .catch((e) => setErr(e.message));
+          }}
         >
           Show required columns
         </button>
