@@ -932,6 +932,7 @@ export default function CatastropheDesk({ shellMode = false, onPortfolioChange }
                               <th className="border-b border-kenya-line py-1.5 text-left">Tier</th>
                               <th className="border-b border-kenya-line py-1.5 text-left">Return period</th>
                               <th className="border-b border-kenya-line py-1.5 text-left">Hazard</th>
+                              <th className="border-b border-kenya-line py-1.5 text-left">Damage ratio</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -940,13 +941,17 @@ export default function CatastropheDesk({ shellMode = false, onPortfolioChange }
                                 <td className="border-b border-kenya-line py-1.5">{t.label}</td>
                                 <td className="border-b border-kenya-line py-1.5">~1-in-{t.return_period_years} yr</td>
                                 <td className="border-b border-kenya-line py-1.5">{hazardPct(t.hazard)}</td>
+                                <td className="border-b border-kenya-line py-1.5">
+                                  {t.damage_ratio != null ? pct.format(t.damage_ratio) : '—'}
+                                </td>
                               </tr>
                             ))}
                           </tbody>
                         </table>
                       </div>
                       <p className="mt-3 text-[11px] text-kenya-muted">
-                        Ground-up losses: upload team output on{' '}
+                        Damage ratios from the vulnerability matrix for{' '}
+                        <strong className="font-semibold text-kenya-navy">{detail.housing_label}</strong>. Full curves on{' '}
                         <Link href="/ep-curve" className="font-semibold text-kenya-blue hover:underline">
                           EP curve
                         </Link>
