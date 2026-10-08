@@ -1,5 +1,5 @@
 /** Default landing route after sign-in (all users share the same workspace). */
-export const DEFAULT_HOME = '/catastrophe';
+export const DEFAULT_HOME = '/map';
 
 export function isSignedIn(session) {
   return Boolean(session?.email);

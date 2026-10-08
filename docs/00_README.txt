@@ -6,7 +6,7 @@ Team A track: Nairobi urban (pluvial) flood catastrophe decision-support.
 
 It matches the catastrophe desk in this repo:
   - Synthetic exposure + hazard scores: data/team_a_nairobi/
-  - Flood CAT engine: lib/nairobi-flood-cat.js (return-period tiers, damage ratios)
+  - Flood portfolio: lib/nairobi-flood-cat.js (exposure CSV + hazard scores). EP/losses: team upload only (EP curve page).
   - Desk UI: /catastrophe (Next.js) or public/catastrophe.html
 
 Scenario: Kariobangi Cold Storage & Logistics Ltd suffers a pluvial flood loss

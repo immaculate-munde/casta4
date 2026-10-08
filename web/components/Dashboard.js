@@ -46,7 +46,7 @@ function Sparkbar({ value, max, colour }) {
   );
 }
 
-export default function Dashboard() {
+export default function Dashboard({ embedded = false }) {
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
 
@@ -61,26 +61,28 @@ export default function Dashboard() {
   const maxHousingTiv = flood ? Math.max(...(flood.by_housing || []).map((h) => h.tiv_kes)) : 1;
 
   return (
-    <div className="min-h-screen bg-kenya-surface text-sm text-kenya-ink">
-      <header className="sticky top-0 z-50 flex h-14 items-center justify-between border-b-[3px] border-kenya-coral bg-kenya-navy px-6">
-        <div className="flex items-center gap-2.5">
-          <span className="inline-block h-5 w-2 shrink-0 bg-kenya-coral" aria-hidden />
-          <span className="font-serif text-xl font-semibold tracking-tight text-white">Kenya Re</span>
-          <span className="border-l border-white/35 pl-2.5 text-xs font-medium text-white/85">ReAgent AI</span>
-        </div>
-        <nav className="flex items-center gap-4 text-sm font-medium text-white/90">
-          <Link href="/" className="hover:text-white">
-            Home
-          </Link>
-          <Link href="/catastrophe" className="hover:text-white">
-            Flood desk
-          </Link>
-          <ThemeToggle variant="onDark" />
-          <SignOutButton className="text-xs text-white/80 hover:text-white" />
-        </nav>
-      </header>
+    <div className={`bg-kenya-surface text-sm text-kenya-ink ${embedded ? 'min-h-full' : 'min-h-screen'}`}>
+      {!embedded ? (
+        <header className="sticky top-0 z-50 flex h-14 items-center justify-between border-b-[3px] border-kenya-coral bg-kenya-navy px-6">
+          <div className="flex items-center gap-2.5">
+            <span className="inline-block h-5 w-2 shrink-0 bg-kenya-coral" aria-hidden />
+            <span className="font-serif text-xl font-semibold tracking-tight text-white">Kenya Re</span>
+            <span className="border-l border-white/35 pl-2.5 text-xs font-medium text-white/85">ReAgent AI</span>
+          </div>
+          <nav className="flex items-center gap-4 text-sm font-medium text-white/90">
+            <Link href="/" className="hover:text-white">
+              Home
+            </Link>
+            <Link href="/map" className="hover:text-white">
+              Flood desk
+            </Link>
+            <ThemeToggle variant="onDark" />
+            <SignOutButton className="text-xs text-white/80 hover:text-white" />
+          </nav>
+        </header>
+      ) : null}
 
-      <div className="mx-auto max-w-7xl px-6 py-6">
+      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
         <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
           <div>
             <h1 className="font-serif text-3xl font-semibold tracking-tight text-kenya-navy">Operations Dashboard</h1>
@@ -130,9 +132,9 @@ export default function Dashboard() {
               accent: '',
             },
             {
-              label: 'Moderate Flood Loss',
-              value: flood ? kes.format(flood.moderate_loss_kes) : '—',
-              sub: '1-in-25 yr scenario',
+              label: 'Team EP (≥10 yr)',
+              value: flood?.moderate_loss_kes != null ? kes.format(flood.moderate_loss_kes) : '—',
+              sub: flood?.team_ep_loaded ? 'From uploaded EP CSV' : 'Upload on EP curve page',
               accent: 'border-l-4 border-l-kenya-coral',
             },
           ].map((kpi) => (
@@ -227,11 +229,11 @@ export default function Dashboard() {
           <section className="rounded-sm border border-kenya-line bg-kenya-panel p-5 shadow-sm lg:col-span-4">
             <div className="mb-1 flex items-center justify-between">
               <h2 className="font-serif text-lg font-semibold text-kenya-navy">Top Flood Risk Locations</h2>
-              <Link href="/catastrophe" className="text-xs font-semibold text-kenya-blue hover:underline">
+              <Link href="/map" className="text-xs font-semibold text-kenya-blue hover:underline">
                 Open map →
               </Link>
             </div>
-            <p className="mb-3 text-xs text-kenya-muted">Moderate scenario (1-in-25 yr)</p>
+            <p className="mb-3 text-xs text-kenya-muted">Highest hazard — moderate tier (CSV scores)</p>
             <div className="space-y-2">
               {flood?.top_risk_locations?.length ? (
                 flood.top_risk_locations.map((loc, i) => (
@@ -248,7 +250,7 @@ export default function Dashboard() {
                     </div>
                     <div className="text-right text-xs">
                       <span className="font-bold text-kenya-coral">{Math.round(loc.hazard * 100)}%</span>
-                      <span className="block text-kenya-muted">{kes.format(loc.loss_kes)}</span>
+                      <span className="block text-kenya-muted">{kes.format(loc.tiv_kes)} TIV</span>
                     </div>
                   </div>
                 ))
@@ -329,12 +331,12 @@ export default function Dashboard() {
               </span>
             </div>
             <div className="font-serif text-3xl font-semibold text-kenya-navy">
-              {flood ? kes.format(flood.severe_loss_kes) : '—'}
+              {flood?.severe_loss_kes != null ? kes.format(flood.severe_loss_kes) : '—'}
             </div>
             <p className="mt-1 text-xs text-kenya-muted">
-              Estimated portfolio ground-up loss · {flood ? flood.location_count : '—'} Nairobi locations
+              Team EP at severe return period · {flood ? flood.location_count : '—'} locations on map
             </p>
-            <Link href="/catastrophe" className="mt-4 inline-block text-sm font-bold text-kenya-navy hover:underline">
+            <Link href="/map" className="mt-4 inline-block text-sm font-bold text-kenya-navy hover:underline">
               Model full scenario →
             </Link>
           </section>

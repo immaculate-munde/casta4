@@ -20,9 +20,8 @@ export function formatPropertyContext(ctx) {
     `Coordinates: ${ctx.lat?.toFixed?.(5)}, ${ctx.lon?.toFixed?.(5)}`,
     `Flood scenario tier: ${ctx.active_tier || 'moderate'}`,
     `Hazard (this tier): ${ctx.hazard != null ? `${Math.round(ctx.hazard * 100)}%` : '—'}`,
-    `Modelled ground-up loss (this tier): ${kes.format(ctx.loss_kes || 0)}`,
     '',
-    'Answer as Kenya Re underwriter: flood risk, expected loss if we reinsure this cedant on this property, and treaty/policy referral points. Use retrieved documents plus the figures above.',
+    'Answer as Kenya Re underwriter: flood risk, treaty/policy referral points, and whether to escalate to the team financial model for loss estimates. Use retrieved documents plus the figures above (no built-in loss engine).',
     '',
     'Underwriter question:',
   ];

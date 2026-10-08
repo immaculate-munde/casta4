@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { isSignedIn } from './lib/auth-roles';
 
 const COOKIE = 'casta4_session';
-const PROTECTED_PREFIXES = ['/dashboard', '/catastrophe'];
+const PROTECTED_PREFIXES = ['/dashboard', '/catastrophe', '/map', '/chat', '/ep-curve', '/settings'];
 
 function decodeSession(value) {
   try {
@@ -37,5 +37,12 @@ export function middleware(request) {
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/catastrophe/:path*'],
+  matcher: [
+    '/dashboard/:path*',
+    '/catastrophe/:path*',
+    '/map/:path*',
+    '/chat/:path*',
+    '/ep-curve/:path*',
+    '/settings/:path*',
+  ],
 };

@@ -4,6 +4,6 @@ import dynamic from 'next/dynamic';
 
 const Dashboard = dynamic(() => import('@/components/Dashboard'), { ssr: false });
 
-export default function DashboardClient() {
-  return <Dashboard />;
+export default function DashboardClient({ embedded = false }) {
+  return <Dashboard embedded={embedded} />;
 }

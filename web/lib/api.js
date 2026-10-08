@@ -8,6 +8,16 @@ export function ragApiBase() {
   return (process.env.NEXT_PUBLIC_RAG_API_URL || 'http://localhost:3001').replace(/\/$/, '');
 }
 
+/** Append query params (skips null/undefined/empty). */
+export function withQuery(path, params = {}) {
+  const qs = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value != null && value !== '') qs.set(key, String(value));
+  }
+  const tail = qs.toString();
+  return tail ? `${path}?${tail}` : path;
+}
+
 export async function fetchRagJson(path) {
   const res = await fetch(`${ragApiBase()}${path}`);
   if (!res.ok) {
