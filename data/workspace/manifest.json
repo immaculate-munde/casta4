@@ -5,6 +5,21 @@
   "uploads": [
     {
       "type": "exposure",
+      "filename": "exposure_mombasa_with_hazard.csv",
+      "uploaded_at": "2026-10-08T13:26:26.553Z"
+    },
+    {
+      "type": "exposure",
+      "filename": "exposure_nairobi_with_hazard.csv",
+      "uploaded_at": "2026-10-08T13:25:48.021Z"
+    },
+    {
+      "type": "exposure",
+      "filename": "exposure_mombasa_with_hazard.csv",
+      "uploaded_at": "2026-10-08T13:25:07.407Z"
+    },
+    {
+      "type": "exposure",
       "filename": "exposure_nairobi_with_hazard.csv",
       "uploaded_at": "2026-10-08T11:45:13.150Z"
     },
@@ -19,6 +34,6 @@
       "uploaded_at": "2026-10-08T10:12:30.993Z"
     }
   ],
-  "exposure_rows": 600,
-  "updated_at": "2026-10-08T11:45:13.151Z"
+  "exposure_rows": 150,
+  "updated_at": "2026-10-08T13:26:26.554Z"
 }
