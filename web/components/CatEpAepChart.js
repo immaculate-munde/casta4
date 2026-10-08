@@ -11,7 +11,7 @@ function eltToAepPoints(elt) {
   }));
 }
 
-export default function CatEpAepChart({ baselineElt, aiElt, useAi = true, currencyCode = 'KES' }) {
+export default function CatEpAepChart({ baselineElt, aiElt, useAi = true, currencyCode = 'KES', onFocus }) {
   const baseline = eltToAepPoints(baselineElt);
   const ai = eltToAepPoints(aiElt);
   const series = [
@@ -36,7 +36,7 @@ export default function CatEpAepChart({ baselineElt, aiElt, useAi = true, curren
   const yForAep = (aep) => pad.t + innerH - aep * innerH;
 
   return (
-    <figure className="border border-kenya-line bg-kenya-panel p-4">
+    <figure className="border border-kenya-line bg-kenya-panel p-4" onMouseEnter={() => onFocus?.()}>
       <figcaption className="font-serif text-lg font-semibold text-kenya-navy">Exceedance probability (CAT)</figcaption>
       <p className="mt-1 text-[11px] text-kenya-muted">
         Gross insured loss (M {currencyCode}) vs annual exceedance probability — matches Streamlit portfolio analytics.

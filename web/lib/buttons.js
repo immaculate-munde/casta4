@@ -5,7 +5,10 @@ const pill =
 
 export const btnBase = `${pill} border-2 border-[#0f2d52] bg-white px-4 py-2 text-xs text-[#0f2d52] hover:bg-[#eef1f5] dark:border-[#dadce0] dark:bg-[#1a1d21] dark:text-[#f1f3f4] dark:hover:bg-[#2d3135]`;
 
-export const btnPrimary = `${pill} border-2 border-[#0f2d52] bg-[#0f2d52] px-4 py-2 text-xs font-bold !text-white hover:bg-[#17386a] dark:border-[#1a4a8a] dark:bg-[#1a4a8a] dark:!text-white dark:hover:bg-[#2563b8]`;
+export const btnPrimary = `${pill} border-2 border-[#0f2d52] bg-[#0f2d52] px-4 py-2 text-sm font-bold !text-white hover:bg-[#17386a] dark:border-[#1a4a8a] dark:bg-[#1a4a8a] dark:!text-white dark:hover:bg-[#2563b8]`;
+
+/** Outline / secondary — force text color (globals set button { color: inherit }). */
+export const btnSecondary = `${pill} border-2 border-[#0f2d52] bg-white px-4 py-2 text-sm font-bold !text-[#0f2d52] hover:bg-[#eef1f5] dark:border-[#dadce0] dark:bg-[#1a1d21] dark:!text-[#f1f3f4] dark:hover:bg-[#2d3135]`;
 
 export const btnSm = 'px-3 py-1.5 text-xs font-bold normal-case tracking-normal';
 

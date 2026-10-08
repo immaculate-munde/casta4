@@ -2,7 +2,6 @@
 
 Agentic flood **catastrophe modelling** and **underwriter decision support** for the Kenya Re AI4I Hackathon 2026. The product UI is **Next.js** (`web/`). **ReAgent** answers policy, treaty, and claims questions with **RAG** (Groq). **Linus’s Python CAT engine** drives portfolio EP/ELT, single-risk underwriting, and vulnerability curves.
 
-Streamlit (`nairobi-flood-cat/app.py`) is **dev/demo only** — not the production shell.
 
 ## What’s implemented
 

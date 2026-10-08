@@ -22,10 +22,22 @@ export default function DualEpChart({
   uncertaintyBand = null,
   subtitle,
   singleSeries = false,
+  onFocus,
 }) {
   const [hover, setHover] = useState(null);
+  const [hiddenSeries, setHiddenSeries] = useState(() => new Set());
 
-  const displaySeries = singleSeries && series?.length ? [series[0]] : series || [];
+  const toggleSeries = (id) => {
+    setHiddenSeries((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const rawDisplay = singleSeries && series?.length ? [series[0]] : series || [];
+  const displaySeries = rawDisplay.filter((s) => !hiddenSeries.has(s.id));
   const allPts = displaySeries.flatMap((s) => s.points || []);
   const bandPts = uncertaintyBand || [];
 
@@ -38,7 +50,11 @@ export default function DualEpChart({
   }, [allPts, bandPts]);
 
   if (!allPts.length) {
-    return <p className="py-8 text-center text-sm text-kenya-muted">Load portfolio data or upload a team EP CSV.</p>;
+    const msg =
+      rawDisplay.length && hiddenSeries.size >= rawDisplay.length
+        ? 'All series hidden — click a legend button above to show a line.'
+        : 'Load portfolio data or upload a team EP CSV.';
+    return <p className="py-8 text-center text-sm text-kenya-muted">{msg}</p>;
   }
 
   const width = 640;
@@ -77,7 +93,11 @@ export default function DualEpChart({
   }
 
   return (
-    <figure className="relative border border-kenya-line bg-kenya-panel p-4">
+    <figure
+      className="relative border border-kenya-line bg-kenya-panel p-4"
+      onMouseEnter={() => onFocus?.()}
+      onFocus={() => onFocus?.()}
+    >
       <figcaption className="font-serif text-lg font-semibold text-kenya-navy">{title}</figcaption>
       <p className="mt-1 text-[11px] text-kenya-muted">
         {subtitle || 'Hover points for return period, AEP, and loss. Upload team CSV to replace the primary model line.'}
@@ -170,14 +190,32 @@ export default function DualEpChart({
         ))}
       </svg>
 
-      {!singleSeries ? (
-        <ul className="mt-3 flex flex-wrap gap-4 text-[11px] font-semibold">
-          {displaySeries.map((s) => (
-            <li key={s.id} className="inline-flex items-center gap-2 text-kenya-ink">
-              <span className="inline-block h-0.5 w-6" style={{ background: COLORS[s.id] || '#17386a' }} />
-              {s.label}
-            </li>
-          ))}
+      {!singleSeries && rawDisplay.length > 1 ? (
+        <ul className="mt-3 flex flex-wrap gap-2 text-[11px] font-semibold">
+          {rawDisplay.map((s) => {
+            const off = hiddenSeries.has(s.id);
+            return (
+              <li key={s.id}>
+                <button
+                  type="button"
+                  className={`inline-flex items-center gap-2 rounded-full border px-2.5 py-1 normal-case transition ${
+                    off
+                      ? 'border-kenya-line bg-transparent text-kenya-muted line-through opacity-60'
+                      : 'border-kenya-line/80 bg-kenya-surface text-kenya-ink hover:border-[#0f2d52]/50'
+                  }`}
+                  onClick={() => toggleSeries(s.id)}
+                  aria-pressed={!off}
+                  title={off ? 'Show series' : 'Hide series'}
+                >
+                  <span
+                    className="inline-block h-0.5 w-6"
+                    style={{ background: off ? '#9aa0a6' : COLORS[s.id] || '#17386a' }}
+                  />
+                  {s.label}
+                </button>
+              </li>
+            );
+          })}
           {bandPts.length ? (
             <li className="inline-flex items-center gap-2 text-kenya-muted">
               <span className="inline-block h-3 w-6 bg-[#6b2d5c]/20" />

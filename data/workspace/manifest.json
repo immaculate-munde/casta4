@@ -5,6 +5,16 @@
   "uploads": [
     {
       "type": "exposure",
+      "filename": "exposure_nairobi_with_hazard.csv",
+      "uploaded_at": "2026-10-08T19:58:35.689Z"
+    },
+    {
+      "type": "exposure",
+      "filename": "exposure_mombasa_with_hazard.csv",
+      "uploaded_at": "2026-10-08T19:55:55.838Z"
+    },
+    {
+      "type": "exposure",
       "filename": "exposure_nzoia_synthetic.csv",
       "uploaded_at": "2026-10-08T15:22:25.549Z"
     },
@@ -39,6 +49,9 @@
       "uploaded_at": "2026-10-08T10:12:30.993Z"
     }
   ],
-  "exposure_rows": 500,
-  "updated_at": "2026-10-08T15:22:25.550Z"
+  "exposure_rows": 600,
+  "updated_at": "2026-10-08T19:58:35.690Z",
+  "currency_code": "KES",
+  "currency_locale": "en-KE",
+  "country_label": "Kenya"
 }
