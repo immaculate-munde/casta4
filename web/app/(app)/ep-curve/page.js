@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import DualEpChart from '@/components/DualEpChart';
+import EpViewSwitch from '@/components/EpViewSwitch';
 import ModelEpUpload from '@/components/ModelEpUpload';
 import { fetchRagJson } from '@/lib/api';
 import { btnBase, cn } from '@/lib/buttons';
@@ -15,6 +16,7 @@ export default function EpCurvePage() {
   const [summary, setSummary] = useState(null);
   const [workspace, setWorkspace] = useState(null);
   const [modelLabel, setModelLabel] = useState('Team financial model');
+  const [epView, setEpView] = useState('gross');
   const [err, setErr] = useState('');
 
   const loadCurve = useCallback(() => {
@@ -26,38 +28,62 @@ export default function EpCurvePage() {
   useEffect(() => {
     fetchRagJson('/api/nairobi/meta').then(setMeta).catch(() => {});
     fetchRagJson('/api/nairobi/summary').then(setSummary).catch(() => {});
-    fetchRagJson('/api/workspace/status').then((st) => {
-      setWorkspace(st);
-      if (st.model_team_label) setModelLabel(st.model_team_label);
-    }).catch(() => {});
+    fetchRagJson('/api/workspace/status')
+      .then((st) => {
+        setWorkspace(st);
+        if (st.model_team_label) setModelLabel(st.model_team_label);
+      })
+      .catch(() => {});
     loadCurve();
   }, [loadCurve]);
 
   const external = curve?.external_model;
   const hasExternal = Boolean(external?.ep_curve?.length);
+  const viewsAvailable = external?.ep_views_available?.length
+    ? external.ep_views_available
+    : hasExternal
+      ? ['gross']
+      : [];
 
-  const series = useMemo(() => {
-    if (!hasExternal) return [];
-    const out = [
-      {
-        id: 'external',
-        label: modelLabel || workspace?.model_team_label || 'Team model (gross)',
-        points: external.ep_curve,
-        netAt: (i) => external.ep_curve_net?.[i]?.loss_kes,
-      },
-    ];
-    if (external.ep_curve_net?.length) {
-      out.push({
-        id: 'external_net',
-        label: `${modelLabel || 'Team model'} (net)`,
-        points: external.ep_curve_net,
-        dashed: true,
-      });
+  useEffect(() => {
+    if (!viewsAvailable.length) return;
+    setEpView((current) => (viewsAvailable.includes(current) ? current : viewsAvailable[0]));
+  }, [viewsAvailable.join(',')]);
+
+  const activeView = useMemo(() => {
+    const views = external?.ep_views;
+    if (views) {
+      if (epView === 'net' && views.net) return views.net;
+      if (epView === 'uncertainty' && views.uncertainty) return views.uncertainty;
+      return views.gross;
     }
-    return out;
-  }, [hasExternal, external, modelLabel, workspace]);
+    if (!hasExternal) return null;
+    return {
+      id: 'gross',
+      label: modelLabel || workspace?.model_team_label || 'Team model (gross)',
+      points: external.ep_curve,
+    };
+  }, [external, epView, hasExternal, modelLabel, workspace]);
 
-  const primaryPts = external?.ep_curve;
+  const chartSeries = useMemo(() => {
+    if (!activeView?.points?.length) return [];
+    const chartId = epView === 'net' ? 'net' : 'external';
+    const baseLabel = modelLabel || workspace?.model_team_label || 'Team model';
+    const label =
+      epView === 'gross'
+        ? `${baseLabel} (gross)`
+        : epView === 'net'
+          ? `${baseLabel} (net)`
+          : activeView.label || `${baseLabel} + uncertainty`;
+    return [{ id: chartId, label, points: activeView.points }];
+  }, [activeView, epView, modelLabel, workspace]);
+
+  const uncertaintyBand =
+    epView === 'uncertainty'
+      ? activeView?.band || external?.uncertainty_band || null
+      : null;
+
+  const primaryPts = activeView?.points;
   const extreme = primaryPts?.find((p) => p.return_period_years >= 100) || primaryPts?.[primaryPts.length - 1];
 
   return (
@@ -67,6 +93,11 @@ export default function EpCurvePage() {
           <h1 className="font-serif text-2xl font-semibold text-kenya-navy">EP curve & models</h1>
           <p className="mt-1 text-sm text-kenya-muted">
             {meta?.region_label || 'Portfolio'} · {summary ? kes.format(summary.total_tiv_kes) : '…'} TIV
+          </p>
+          <p className="mt-2 text-[11px] text-kenya-muted">
+            Model teams: pull structured exposure from{' '}
+            <code className="text-[10px]">GET /api/workspace/model-input</code> — see{' '}
+            <code className="text-[10px]">docs/MODEL_IO.md</code>.
           </p>
         </header>
 
@@ -98,6 +129,7 @@ export default function EpCurvePage() {
             <div className="border border-kenya-line bg-kenya-panel p-4">
               <p className="text-[10px] font-bold uppercase text-kenya-muted">1-in-{extreme.return_period_years} yr</p>
               <p className="mt-1 text-xl font-semibold text-kenya-navy">{kes.format(extreme.loss_kes)}</p>
+              <p className="mt-1 text-[10px] text-kenya-muted capitalize">{epView.replace('_', ' ')} view</p>
             </div>
             <div className="border border-kenya-line bg-kenya-panel p-4">
               <p className="text-[10px] font-bold uppercase text-kenya-muted">Locations</p>
@@ -111,12 +143,20 @@ export default function EpCurvePage() {
         ) : null}
 
         {hasExternal ? (
-          <DualEpChart
-            series={series}
-            formatLoss={(v) => kes.format(v)}
-            uncertaintyBand={external.uncertainty_band}
-            subtitle="Hover points for return period, AEP, and loss. Shaded band = p5–p95 when provided in CSV."
-          />
+          <div className="space-y-3">
+            <EpViewSwitch available={viewsAvailable} value={epView} onChange={setEpView} />
+            <DualEpChart
+              series={chartSeries}
+              formatLoss={(v) => kes.format(v)}
+              uncertaintyBand={uncertaintyBand}
+              singleSeries
+              subtitle={
+                epView === 'uncertainty'
+                  ? 'Gross central estimate with p5–p95 band from your CSV. Switch views for net or gross only.'
+                  : 'One curve at a time — use the switch for gross, net, or uncertainty band.'
+              }
+            />
+          </div>
         ) : null}
       </div>
     </div>
