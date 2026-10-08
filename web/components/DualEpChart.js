@@ -21,10 +21,12 @@ export default function DualEpChart({
   title = 'Exceedance probability curve',
   uncertaintyBand = null,
   subtitle,
+  singleSeries = false,
 }) {
   const [hover, setHover] = useState(null);
 
-  const allPts = (series || []).flatMap((s) => s.points || []);
+  const displaySeries = singleSeries && series?.length ? [series[0]] : series || [];
+  const allPts = displaySeries.flatMap((s) => s.points || []);
   const bandPts = uncertaintyBand || [];
 
   const maxLoss = useMemo(() => {
@@ -44,7 +46,7 @@ export default function DualEpChart({
   const pad = { t: 24, r: 24, b: 44, l: 56 };
   const innerW = width - pad.l - pad.r;
   const innerH = height - pad.t - pad.b;
-  const n = (series?.[0]?.points || []).length;
+  const n = (displaySeries[0]?.points || []).length;
 
   const xForIndex = (i) => pad.l + (n <= 1 ? innerW / 2 : (i / (n - 1)) * innerW);
   const yForLoss = (loss) => pad.t + innerH - (loss / maxLoss) * innerH;
@@ -114,7 +116,7 @@ export default function DualEpChart({
           />
         ))}
         {bandPath ? <path d={bandPath} fill="#6b2d5c" fillOpacity="0.12" stroke="none" /> : null}
-        {(series || []).map((s) => {
+        {displaySeries.map((s) => {
           const pts = s.points || [];
           const color = COLORS[s.id] || '#17386a';
           const path = pts
@@ -155,7 +157,7 @@ export default function DualEpChart({
             </g>
           );
         })}
-        {(series?.[0]?.points || []).map((p, i) => (
+        {(displaySeries[0]?.points || []).map((p, i) => (
           <text
             key={p.return_period_years}
             x={xForIndex(i)}
@@ -168,42 +170,40 @@ export default function DualEpChart({
         ))}
       </svg>
 
-      <ul className="mt-3 flex flex-wrap gap-4 text-[11px] font-semibold">
-        {(series || []).map((s) => (
-          <li key={s.id} className="inline-flex items-center gap-2 text-kenya-ink">
-            <span className="inline-block h-0.5 w-6" style={{ background: COLORS[s.id] || '#17386a' }} />
-            {s.label}
-          </li>
-        ))}
-        {bandPts.length ? (
-          <li className="inline-flex items-center gap-2 text-kenya-muted">
-            <span className="inline-block h-3 w-6 bg-[#6b2d5c]/20" />
-            Model uncertainty (p5–p95)
-          </li>
-        ) : null}
-      </ul>
+      {!singleSeries ? (
+        <ul className="mt-3 flex flex-wrap gap-4 text-[11px] font-semibold">
+          {displaySeries.map((s) => (
+            <li key={s.id} className="inline-flex items-center gap-2 text-kenya-ink">
+              <span className="inline-block h-0.5 w-6" style={{ background: COLORS[s.id] || '#17386a' }} />
+              {s.label}
+            </li>
+          ))}
+          {bandPts.length ? (
+            <li className="inline-flex items-center gap-2 text-kenya-muted">
+              <span className="inline-block h-3 w-6 bg-[#6b2d5c]/20" />
+              Model uncertainty (p5–p95)
+            </li>
+          ) : null}
+        </ul>
+      ) : null}
 
       <div className="mt-4 overflow-x-auto">
         <table className="w-full min-w-[320px] border-collapse text-xs">
           <thead>
             <tr className="border-b border-kenya-line text-left text-kenya-muted">
               <th className="py-2 pr-2">Return period</th>
-              {(series || []).map((s) => (
-                <th key={s.id} className="py-2 pr-2">
-                  {s.label}
-                </th>
-              ))}
+              <th className="py-2 pr-2">AEP</th>
+              <th className="py-2 pr-2">{displaySeries[0]?.label || 'Loss'}</th>
             </tr>
           </thead>
           <tbody>
-            {(series?.[0]?.points || []).map((p, rowIdx) => (
+            {(displaySeries[0]?.points || []).map((p, rowIdx) => (
               <tr key={p.return_period_years} className="border-b border-kenya-line/60">
                 <td className="py-2 font-medium text-kenya-navy">1-in-{p.return_period_years} yr</td>
-                {(series || []).map((s) => (
-                  <td key={s.id} className="py-2 tabular-nums">
-                    {formatLoss((s.points || [])[rowIdx]?.loss_kes ?? 0)}
-                  </td>
-                ))}
+                <td className="py-2 tabular-nums text-kenya-muted">{pctAep(p.aep)}</td>
+                <td className="py-2 tabular-nums font-medium text-kenya-navy">
+                  {formatLoss(p.loss_kes ?? 0)}
+                </td>
               </tr>
             ))}
           </tbody>
