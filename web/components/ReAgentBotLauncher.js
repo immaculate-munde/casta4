@@ -40,7 +40,7 @@ export default function ReAgentBotLauncher({ href = '/chat', onActivate, classNa
     </>
   );
 
-  const shellClass = `group fixed bottom-6 right-6 z-[800] flex flex-col items-center focus:outline-none ${className}`;
+  const shellClass = `group fixed bottom-[max(1.5rem,env(safe-area-inset-bottom))] right-[max(1rem,env(safe-area-inset-right))] z-[800] flex flex-col items-center focus:outline-none ${className}`;
 
   if (isButton) {
     return (

@@ -5,7 +5,8 @@ import ThemeProvider from '@/components/ThemeProvider';
 
 export const metadata = {
   title: 'Kenya Re — Casta4',
-  description: 'Pluvial flood catastrophe modelling and ReAgent document intelligence for Kenya Re',
+  description:
+    'Kenya Re Casta4 — Nairobi flood catastrophe modelling and underwriter decision support for risk and claims',
 };
 
 export const viewport = {

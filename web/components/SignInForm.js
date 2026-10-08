@@ -41,21 +41,21 @@ export default function SignInForm() {
 
   return (
     <div className="min-h-screen bg-kenya-surface">
-      <header className="flex items-center justify-between border-b border-kenya-line bg-kenya-panel px-6 py-4">
+      <header className="flex items-center justify-between gap-2 border-b border-kenya-line bg-kenya-panel px-4 py-4 pt-[max(1rem,env(safe-area-inset-top))] sm:px-6">
         <Link href="/" className="font-semibold text-kenya-blue hover:underline">
           ← Back to home
         </Link>
         <ThemeToggle />
       </header>
 
-      <main className="mx-auto max-w-lg px-6 py-10">
-        <h1 className="font-serif text-3xl font-semibold text-kenya-navy">Sign in</h1>
+      <main className="mx-auto max-w-lg px-4 py-8 pb-[max(2rem,env(safe-area-inset-bottom))] sm:px-6 sm:py-10">
+        <h1 className="font-serif text-2xl font-semibold text-kenya-navy sm:text-3xl">Sign in</h1>
         <p className="mt-2 text-sm font-medium text-kenya-muted">
           Demo workspace sign-in. You land on the flood desk first; the operations dashboard is in the nav. Production can replace
           this with your IdP or API token exchange.
         </p>
 
-        <form onSubmit={onSubmit} className="mt-8 space-y-5 rounded-sm border-2 border-kenya-line bg-kenya-panel p-6 shadow-md">
+        <form onSubmit={onSubmit} className="mt-8 space-y-5 rounded-sm border-2 border-kenya-line bg-kenya-panel p-4 shadow-md sm:p-6">
           <label className="block text-sm">
             <span className="font-semibold text-kenya-navy">Work email</span>
             <input

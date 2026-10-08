@@ -30,7 +30,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="h-full overflow-y-auto p-4 sm:p-6">
+    <div className="h-full overflow-y-auto overflow-x-hidden p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:p-6">
       <div className="mx-auto max-w-lg space-y-6">
         <h1 className="font-serif text-2xl font-semibold text-kenya-navy">Settings</h1>
 

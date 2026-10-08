@@ -125,10 +125,10 @@ export default function EpCurvePage() {
   const cat100 = cat?.summary_100yr;
 
   return (
-    <div className="h-full overflow-y-auto bg-kenya-surface p-4 sm:p-6">
+    <div className="h-full overflow-y-auto overflow-x-hidden bg-kenya-surface p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:p-6">
       <div className="mx-auto max-w-4xl space-y-6">
-        <header>
-          <h1 className="font-serif text-2xl font-semibold text-kenya-navy">EP curve & models</h1>
+        <header className="min-w-0">
+          <h1 className="font-serif text-xl font-semibold text-kenya-navy sm:text-2xl">EP curve & models</h1>
           <p className="mt-1 text-sm text-kenya-muted">
             {meta?.region_label || 'Portfolio'} ·{' '}
             {summary ? `${formatMoney.format(summary.total_tiv_kes)} ${tivLabel}` : '…'}

@@ -81,6 +81,8 @@ const BAND_COLOUR = {
 
 export default function CatastropheDesk({ shellMode = false, onPortfolioChange }) {
   const { formatMoney, formatPct } = useWorkspaceFormat();
+  /** App shell: header + mobile bottom nav (fixed panels only). */
+  const mobileFixedTop = shellMode ? 'max-lg:top-[7.25rem]' : 'max-lg:top-14';
   const mapRef = useRef(null);
   const mapInstance = useRef(null);
   const popupRef = useRef(null);
@@ -603,15 +605,15 @@ export default function CatastropheDesk({ shellMode = false, onPortfolioChange }
         </>
       ) : (
         <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-kenya-line bg-kenya-panel px-3 py-2">
-          <p className="min-w-0 flex-1 truncate text-xs font-medium text-kenya-muted" title={summaryText}>
+          <p className="min-w-0 basis-full truncate text-xs font-medium text-kenya-muted sm:basis-auto sm:flex-1" title={summaryText}>
             {summaryText}
           </p>
-          <Link href="/ep-curve" className={cn(btnBase, btnSm, 'shrink-0 no-underline normal-case')}>
+          <Link href="/ep-curve" className={cn(btnBase, btnSm, 'min-h-9 shrink-0 no-underline normal-case')}>
             EP curve
           </Link>
           <button
             type="button"
-            className={cn(btnPrimary, btnSm, 'shrink-0 normal-case')}
+            className={cn(btnPrimary, btnSm, 'min-h-9 shrink-0 normal-case')}
             onClick={() => setUploadOpen((v) => !v)}
           >
             {uploadOpen ? 'Close upload' : 'Upload CSV'}
@@ -634,7 +636,7 @@ export default function CatastropheDesk({ shellMode = false, onPortfolioChange }
       {caseOpen ? (
         <button
           type="button"
-          className="fixed inset-0 z-[550] bg-black/40 lg:hidden"
+          className={`fixed inset-x-0 bottom-0 z-[550] bg-black/40 lg:hidden ${mobileFixedTop}`}
           aria-label="Close location panel"
           onClick={() => setCaseOpen(false)}
         />
@@ -869,7 +871,7 @@ export default function CatastropheDesk({ shellMode = false, onPortfolioChange }
         </main>
 
         <aside
-          className={`fixed inset-y-0 right-0 z-[600] flex w-full max-w-md flex-col border-l border-kenya-line bg-kenya-panel shadow-xl transition-transform duration-200 max-lg:top-14 lg:max-w-none lg:shadow-none lg:transition-none ${
+          className={`fixed inset-y-0 right-0 z-[600] flex w-full max-w-md flex-col border-l border-kenya-line bg-kenya-panel shadow-xl transition-transform duration-200 ${mobileFixedTop} lg:max-w-none lg:shadow-none lg:transition-none lg:top-0 ${
             caseOpen ? 'translate-x-0' : 'translate-x-full'
           } ${shellMode ? (openId ? 'lg:static lg:flex' : 'lg:hidden') : 'lg:static lg:translate-x-0'}`}
         >
@@ -899,7 +901,9 @@ export default function CatastropheDesk({ shellMode = false, onPortfolioChange }
                   <p className="m-0 pr-16 text-[11px] font-bold uppercase text-kenya-muted lg:pr-0">
                     {detail.housing_label} · {meta?.region_label || 'Portfolio'}
                   </p>
-                  <h2 className="mt-1 font-serif text-2xl font-semibold text-kenya-navy sm:text-[28px]">{detail.loc_id}</h2>
+                  <h2 className="mt-1 break-all font-serif text-xl font-semibold text-kenya-navy sm:text-2xl sm:break-normal lg:text-[28px]">
+                    {detail.loc_id}
+                  </h2>
                   <p className="mt-1 text-kenya-muted">
                     Cedant: <strong className="text-kenya-ink">{detail.cedant_name}</strong> ({detail.cedant_id})
                   </p>

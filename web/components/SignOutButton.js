@@ -16,7 +16,8 @@ export default function SignOutButton({ className = '' }) {
 
   return (
     <button type="button" onClick={signOut} disabled={loading} className={className}>
-      {loading ? 'Signing out…' : 'Sign out'}
+      <span className="sm:hidden">{loading ? '…' : 'Out'}</span>
+      <span className="hidden sm:inline">{loading ? 'Signing out…' : 'Sign out'}</span>
     </button>
   );
 }
