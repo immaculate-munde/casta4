@@ -3,10 +3,12 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import EpLossLineChart from '@/components/EpLossLineChart';
+import ExposureCsvUpload from '@/components/ExposureCsvUpload';
 import SignOutButton from '@/components/SignOutButton';
 import ThemeToggle from '@/components/ThemeToggle';
 import { useChatDrawer } from '@/components/ChatDrawerProvider';
 import { fetchRagJson, ragApiBase } from '@/lib/api';
+import { btnBase, btnMapOverlay, btnPrimary, btnSm, cn } from '@/lib/buttons';
 
 const hazardPctClass = {
   high: 'text-kenya-coral',
@@ -61,7 +63,7 @@ const BAND_COLOUR = {
   low: '#17386a',
 };
 
-export default function CatastropheDesk() {
+export default function CatastropheDesk({ shellMode = false, onPortfolioChange }) {
   const mapRef = useRef(null);
   const mapInstance = useRef(null);
   const popupRef = useRef(null);
@@ -72,6 +74,8 @@ export default function CatastropheDesk() {
   const [locations, setLocations] = useState([]);
   const [lossCurve, setLossCurve] = useState(null);
   const [activeTier, setActiveTier] = useState('moderate');
+  const [bookListOpen, setBookListOpen] = useState(!shellMode);
+  const boundsFitOnce = useRef(false);
   const [openId, setOpenId] = useState(null);
   const [detail, setDetail] = useState(null);
   const [caseOpen, setCaseOpen] = useState(false);
@@ -81,6 +85,7 @@ export default function CatastropheDesk() {
   const [dossierTab, setDossierTab] = useState('overview');
   const [bookOnly, setBookOnly] = useState(false);
   const [bookPanelOpen, setBookPanelOpen] = useState(false);
+  const [uploadOpen, setUploadOpen] = useState(false);
   const { setPropertyContext, openChat } = useChatDrawer();
 
   const epNote = lossCurve?.points?.find((p) => p.tier === activeTier);
@@ -317,46 +322,23 @@ export default function CatastropheDesk() {
           setMapReady(true);
 
           // ── Load data ──────────────────────────────────────────────────
-          const [metaData, curve, summary, hotspotData, exposure] = await Promise.all([
+          const [metaData, summary, hotspotData] = await Promise.all([
             fetchRagJson('/api/nairobi/meta'),
-            fetchRagJson('/api/nairobi/loss-curve'),
             fetchRagJson('/api/nairobi/summary'),
             fetchRagJson('/api/nairobi/hotspots'),
-            fetchRagJson('/api/nairobi/exposure?tier=moderate'),
           ]);
 
           if (cancelled) return;
 
           setMeta(metaData);
           setPortfolioSummary(summary);
-          setLossCurve(curve);
-          const locs = exposure.locations || [];
-          setLocations(locs);
           const region = metaData.region_label || 'Portfolio';
           const peril = metaData.peril_label || 'pluvial book';
           setSummaryText(
             `${summary.location_count} locations · ${kes.format(summary.total_tiv_kes)} TIV · ${region} · ${peril}`
           );
 
-          // Populate sources
-          map.getSource('exposure')?.setData(locationsToGeoJSON(locs));
           map.getSource('hotspots')?.setData(hotspotsToGeoJSON(hotspotData.hotspots || []));
-
-          // Fit bounds
-          const allCoords = [
-            ...locs.map((r) => [r.lon, r.lat]),
-            ...(hotspotData.hotspots || []).map((h) => [h.lon, h.lat]),
-          ];
-          if (allCoords.length) {
-            const bounds = allCoords.reduce(
-              (b, c) => [
-                [Math.min(b[0][0], c[0]), Math.min(b[0][1], c[1])],
-                [Math.max(b[1][0], c[0]), Math.max(b[1][1], c[1])],
-              ],
-              [allCoords[0], allCoords[0]]
-            );
-            map.fitBounds(bounds, { padding: 40, maxZoom: 13 });
-          }
 
         });
 
@@ -432,17 +414,62 @@ export default function CatastropheDesk() {
     return () => setPropertyContext(null);
   }, [openId, detail, activeTier, locations, setPropertyContext]);
 
-  // ── Reload exposure when tier changes ────────────────────────────────────
+  // ── Reload map exposure when tier changes ────────────────────────────────
   useEffect(() => {
     if (!mapReady) return;
-    fetchRagJson(`/api/nairobi/exposure?tier=${encodeURIComponent(activeTier)}`)
-      .then((data) => {
-        const locs = data.locations || [];
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const fetches = [
+          fetchRagJson(`/api/nairobi/exposure?tier=${encodeURIComponent(activeTier)}`),
+        ];
+        if (!shellMode) {
+          fetches.push(fetchRagJson('/api/nairobi/loss-curve'));
+        }
+        const results = await Promise.all(fetches);
+        if (cancelled) return;
+        const exposure = results[0];
+        if (!shellMode && results[1]) setLossCurve(results[1]);
+        const locs = exposure.locations || [];
         setLocations(locs);
         updateExposureSource(locs);
-      })
-      .catch((err) => setLoadError(err.message));
-  }, [activeTier, mapReady, updateExposureSource]);
+
+        if (!boundsFitOnce.current && locs.length) {
+          boundsFitOnce.current = true;
+          const map = mapInstance.current;
+          if (map) {
+            const bounds = locs.reduce(
+              (b, r) => [
+                [Math.min(b[0][0], r.lon), Math.min(b[0][1], r.lat)],
+                [Math.max(b[1][0], r.lon), Math.max(b[1][1], r.lat)],
+              ],
+              [
+                [locs[0].lon, locs[0].lat],
+                [locs[0].lon, locs[0].lat],
+              ]
+            );
+            map.fitBounds(bounds, { padding: 40, maxZoom: 13 });
+          }
+        }
+      } catch (err) {
+        if (!cancelled) setLoadError(err.message);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeTier, mapReady, updateExposureSource, shellMode]);
+
+  useEffect(() => {
+    const map = mapInstance.current;
+    if (!map || !mapReady) return;
+    const resize = () => window.setTimeout(() => map.resize(), 200);
+    resize();
+    window.addEventListener('resize', resize);
+    return () => window.removeEventListener('resize', resize);
+  }, [bookListOpen, openId, mapReady, shellMode]);
 
   // ── Pan to selected location from list ───────────────────────────────────
   const panTo = useCallback((row) => {
@@ -465,42 +492,84 @@ export default function CatastropheDesk() {
   const openRow = openId ? locations.find((r) => r.loc_id === openId) : null;
   const tierPortfolioLoss = lossCurve?.points?.find((p) => p.tier === activeTier)?.portfolio_loss_kes;
   const activeReturnPeriodYears = lossCurve?.points?.find((p) => p.tier === activeTier)?.return_period_years;
+  const gridCols = shellMode
+    ? openId && bookListOpen
+      ? 'sm:grid-cols-[minmax(148px,176px)_minmax(0,1fr)] lg:grid-cols-[minmax(160px,200px)_minmax(0,1fr)_minmax(248px,288px)]'
+      : openId
+        ? 'sm:grid-cols-[minmax(0,1fr)] lg:grid-cols-[minmax(0,1fr)_minmax(248px,288px)]'
+        : bookListOpen
+          ? 'sm:grid-cols-[minmax(148px,176px)_minmax(0,1fr)]'
+          : 'sm:grid-cols-[minmax(0,1fr)]'
+    : 'sm:grid-cols-[minmax(200px,38%)_minmax(0,1fr)] lg:grid-cols-[250px_minmax(0,1fr)_minmax(300px,360px)]';
 
   const bookBadge =
     'mt-1 inline-block w-fit border px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide';
   const bookBadgeIn = `${bookBadge} border-kenya-coral/40 bg-[#fdeaea] text-kenya-coral dark:bg-[#3d2020] dark:text-[#f07167]`;
   const bookBadgeOut = `${bookBadge} border-kenya-line bg-kenya-surface text-kenya-muted dark:bg-[#25282c]`;
 
+  const deskHeight = shellMode ? 'h-full' : 'h-[100dvh]';
+
   return (
-    <div className="flex h-[100dvh] flex-col bg-kenya-surface font-sans text-sm text-kenya-ink">
-      <header className="sticky top-0 z-50 flex shrink-0 items-center gap-3 border-t-4 border-kenya-coral border-b border-kenya-line bg-kenya-panel px-3 py-2 sm:h-14 sm:px-4">
-        <Link
-          href="/"
-          className="flex min-w-0 shrink-0 items-center gap-2.5 text-kenya-navy no-underline"
-        >
-          <span className="inline-block h-[22px] w-2.5 shrink-0 bg-kenya-coral" aria-hidden="true" />
-          <span className="truncate font-serif text-lg font-semibold sm:text-[22px]">Kenya Re</span>
-          <span className="truncate text-xs text-kenya-muted sm:text-[13px]">
-            {meta?.region_label ? `${meta.region_label} flood desk` : 'Flood desk'}
-          </span>
-        </Link>
-
-        <p
-          className="hidden min-w-0 flex-1 truncate text-[13px] font-medium text-kenya-ink/90 md:block"
-          title={summaryText}
-        >
-          {summaryText}
-        </p>
-
-        <div className="ml-auto flex shrink-0 items-center gap-2 sm:gap-3">
-          <ThemeToggle />
-          <SignOutButton className="text-xs font-semibold text-kenya-blue hover:underline disabled:opacity-60 dark:text-[#8ab4f8]" />
+    <div className={`flex ${deskHeight} flex-col bg-kenya-surface font-sans text-sm text-kenya-ink`}>
+      {!shellMode ? (
+        <>
+          <header className="sticky top-0 z-50 flex shrink-0 items-center gap-3 border-t-4 border-kenya-coral border-b border-kenya-line bg-kenya-panel px-3 py-2 sm:h-14 sm:px-4">
+            <Link
+              href="/"
+              className="flex min-w-0 shrink-0 items-center gap-2.5 text-kenya-navy no-underline"
+            >
+              <span className="inline-block h-[22px] w-2.5 shrink-0 bg-kenya-coral" aria-hidden="true" />
+              <span className="truncate font-serif text-lg font-semibold sm:text-[22px]">Kenya Re</span>
+              <span className="truncate text-xs text-kenya-muted sm:text-[13px]">
+                {meta?.region_label ? `${meta.region_label} flood desk` : 'Flood desk'}
+              </span>
+            </Link>
+            <p
+              className="hidden min-w-0 flex-1 truncate text-[13px] font-medium text-kenya-ink/90 md:block"
+              title={summaryText}
+            >
+              {summaryText}
+            </p>
+            <div className="ml-auto flex shrink-0 items-center gap-2 sm:gap-3">
+              <ThemeToggle />
+              <SignOutButton className="text-xs font-semibold text-kenya-blue hover:underline disabled:opacity-60 dark:text-[#8ab4f8]" />
+            </div>
+          </header>
+          <div className="flex flex-wrap items-center gap-2 border-b border-kenya-line bg-kenya-panel px-3 py-1.5 md:hidden">
+            <p className="min-w-0 flex-1 truncate text-xs font-medium text-kenya-muted" title={summaryText}>
+              {summaryText}
+            </p>
+          </div>
+        </>
+      ) : (
+        <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-kenya-line bg-kenya-panel px-3 py-2">
+          <p className="min-w-0 flex-1 truncate text-xs font-medium text-kenya-muted" title={summaryText}>
+            {summaryText}
+          </p>
+          <Link href="/ep-curve" className={cn(btnBase, btnSm, 'shrink-0 no-underline')}>
+            EP curve
+          </Link>
+          <button
+            type="button"
+            className={cn(btnPrimary, btnSm, 'shrink-0')}
+            onClick={() => setUploadOpen((v) => !v)}
+          >
+            {uploadOpen ? 'Close upload' : 'Upload CSV'}
+          </button>
         </div>
-      </header>
+      )}
 
-      <p className="truncate border-b border-kenya-line bg-kenya-panel px-3 py-1.5 text-xs font-medium text-kenya-muted md:hidden" title={summaryText}>
-        {summaryText}
-      </p>
+      {shellMode && uploadOpen ? (
+        <div className="shrink-0 border-b border-kenya-line bg-kenya-panel px-3 py-2">
+          <ExposureCsvUpload
+            onSuccess={() => {
+              onPortfolioChange?.();
+              setUploadOpen(false);
+              boundsFitOnce.current = false;
+            }}
+          />
+        </div>
+      ) : null}
 
       {caseOpen ? (
         <button
@@ -520,19 +589,17 @@ export default function CatastropheDesk() {
         />
       ) : null}
 
-      <div className="relative flex min-h-0 flex-1 flex-col max-sm:overflow-hidden sm:grid sm:grid-cols-[minmax(200px,38%)_minmax(0,1fr)] sm:grid-rows-1 lg:grid-cols-[250px_minmax(0,1fr)_minmax(300px,360px)]">
+      <div
+        className={`relative flex min-h-0 flex-1 flex-col max-sm:overflow-hidden sm:grid sm:grid-rows-1 ${gridCols}`}
+      >
         <aside
           className={`flex min-h-0 flex-col border-kenya-line bg-kenya-panel max-sm:fixed max-sm:inset-x-0 max-sm:bottom-0 max-sm:z-[520] max-sm:max-h-[min(78vh,560px)] max-sm:rounded-t-2xl max-sm:border-t max-sm:shadow-2xl max-sm:transition-transform max-sm:duration-200 sm:max-h-none sm:border-r sm:transition-none ${
             bookPanelOpen ? 'max-sm:translate-y-0' : 'max-sm:pointer-events-none max-sm:translate-y-full'
-          }`}
+          } ${shellMode && !bookListOpen ? 'hidden' : ''}`}
         >
           <div className="flex shrink-0 items-center justify-between border-b border-kenya-line px-4 py-3 sm:hidden">
             <h2 className="m-0 font-serif text-lg font-semibold text-kenya-navy">Flood book</h2>
-            <button
-              type="button"
-              className="rounded-md border border-kenya-line px-2.5 py-1 text-xs font-semibold text-kenya-muted"
-              onClick={() => setBookPanelOpen(false)}
-            >
+            <button type="button" className={cn(btnBase, btnSm)} onClick={() => setBookPanelOpen(false)}>
               Close
             </button>
           </div>
@@ -641,7 +708,7 @@ export default function CatastropheDesk() {
             </label>
             <button
               type="button"
-              className="pointer-events-auto shrink-0 rounded-md border border-kenya-line bg-kenya-panel/95 px-3 py-2 text-xs font-bold text-kenya-navy shadow-sm backdrop-blur-sm"
+              className={cn(btnMapOverlay, 'pointer-events-auto shrink-0')}
               onClick={() => setBookPanelOpen(true)}
             >
               Locations
@@ -682,45 +749,55 @@ export default function CatastropheDesk() {
               <i className="inline-block h-2.5 w-2.5 rounded-full border-2 border-kenya-coral bg-transparent" aria-hidden /> Treaty book (ring)
             </span>
           </div>
-          <button
-            className="absolute bottom-[4.75rem] left-3 z-[500] border border-kenya-line bg-kenya-panel/95 px-2.5 py-1 text-xs font-bold tracking-wide text-kenya-navy shadow-sm backdrop-blur-sm hover:bg-kenya-surface sm:bottom-12 sm:px-3 sm:py-1.5"
-            type="button"
-            onClick={() => setPitch3d((v) => !v)}
-            title="Toggle 3D buildings"
-          >
-            {pitch3d ? '2D' : '3D'}
-          </button>
-          <section className="absolute right-3 top-3 z-[500] hidden w-[min(320px,calc(100%-1.5rem))] border border-kenya-line bg-kenya-panel p-3 sm:block">
-            <h3 className="m-0 font-serif text-base font-semibold text-kenya-navy">Exceedance curve</h3>
-            <p className="mt-1 text-[11px] font-medium text-kenya-ink/90">
-              {epNote
-                ? `${epNote.label}: ${kes.format(epNote.portfolio_loss_kes)} (${pct.format(epNote.loss_pct_of_tiv)} of TIV)`
-                : 'Portfolio ground-up loss by tier'}
-            </p>
-            <EpLossLineChart
-              epCurve={lossCurve?.ep_curve}
-              maxLoss={maxEp}
-              activeReturnPeriodYears={activeReturnPeriodYears}
-              formatLoss={(v) => kes.format(v)}
-            />
-            <dl className="mt-2 grid gap-1">
-              {(lossCurve?.points || []).map((p) => (
-                <div key={p.tier} className="flex justify-between text-[11px]">
-                  <dt className={p.tier === activeTier ? 'font-bold text-kenya-navy' : 'text-kenya-muted'}>{p.label}</dt>
-                  <dd className="m-0 font-semibold text-kenya-navy">{kes.format(p.portfolio_loss_kes)}</dd>
-                </div>
-              ))}
-            </dl>
-          </section>
+          <div className="absolute left-3 top-3 z-[500] flex flex-col gap-2 sm:top-3">
+            {shellMode ? (
+              <button type="button" className={btnMapOverlay} onClick={() => setBookListOpen((v) => !v)}>
+                {bookListOpen ? 'Hide list' : 'Show list'}
+              </button>
+            ) : null}
+            <button
+              type="button"
+              className={btnMapOverlay}
+              onClick={() => setPitch3d((v) => !v)}
+              title="Toggle 3D buildings"
+            >
+              {pitch3d ? '2D' : '3D'}
+            </button>
+          </div>
+          {!shellMode ? (
+            <section className="absolute right-3 top-3 z-[500] hidden w-[min(320px,calc(100%-1.5rem))] border border-kenya-line bg-kenya-panel p-3 sm:block">
+              <h3 className="m-0 font-serif text-base font-semibold text-kenya-navy">Exceedance curve</h3>
+              <p className="mt-1 text-[11px] font-medium text-kenya-ink/90">
+                {epNote
+                  ? `${epNote.label}: ${kes.format(epNote.portfolio_loss_kes)} (${pct.format(epNote.loss_pct_of_tiv)} of TIV)`
+                  : 'Portfolio loss by tier'}
+              </p>
+              <EpLossLineChart
+                epCurve={lossCurve?.ep_curve}
+                maxLoss={maxEp}
+                activeReturnPeriodYears={activeReturnPeriodYears}
+                formatLoss={(v) => kes.format(v)}
+              />
+              <dl className="mt-2 grid gap-1">
+                {(lossCurve?.points || []).map((p) => (
+                  <div key={p.tier} className="flex justify-between text-[11px]">
+                    <dt className={p.tier === activeTier ? 'font-bold text-kenya-navy' : 'text-kenya-muted'}>{p.label}</dt>
+                    <dd className="m-0 font-semibold text-kenya-navy">{kes.format(p.portfolio_loss_kes)}</dd>
+                  </div>
+                ))}
+              </dl>
+            </section>
+          ) : null}
         </main>
 
         <aside
-          className={`fixed inset-y-0 right-0 z-[600] flex w-full max-w-md flex-col border-l border-kenya-line bg-kenya-panel shadow-xl transition-transform duration-200 max-lg:top-14 lg:static lg:max-w-none lg:shadow-none lg:transition-none ${
-            caseOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'
-          }`}
+          className={`fixed inset-y-0 right-0 z-[600] flex w-full max-w-md flex-col border-l border-kenya-line bg-kenya-panel shadow-xl transition-transform duration-200 max-lg:top-14 lg:max-w-none lg:shadow-none lg:transition-none ${
+            caseOpen ? 'translate-x-0' : 'translate-x-full'
+          } ${shellMode ? (openId ? 'lg:static lg:flex' : 'lg:hidden') : 'lg:static lg:translate-x-0'}`}
         >
           <section className="flex min-h-0 flex-1 flex-col overflow-hidden">
             {!openId || !detail ? (
+              shellMode ? null : (
               <div className="px-4 py-6">
                 <p className="m-0 text-[11px] font-bold uppercase text-kenya-muted">Selected area</p>
                 <h2 className="mt-1 font-serif text-xl font-semibold text-kenya-navy sm:text-2xl">
@@ -730,12 +807,13 @@ export default function CatastropheDesk() {
                   Use ReAgent in the corner for policy and treaty questions.
                 </p>
               </div>
+              )
             ) : (
               <>
                 <div className="relative shrink-0 px-4 pt-4">
                   <button
                     type="button"
-                    className="absolute right-3 top-3 rounded border border-kenya-line px-2 py-1 text-xs font-semibold text-kenya-muted hover:bg-kenya-surface lg:hidden"
+                    className={cn(btnBase, btnSm, 'absolute right-3 top-3 lg:hidden')}
                     onClick={() => setCaseOpen(false)}
                   >
                     Close
@@ -757,11 +835,7 @@ export default function CatastropheDesk() {
                   <p className="mt-2 text-kenya-muted">
                     {detail.lat.toFixed(5)}, {detail.lon.toFixed(5)}
                   </p>
-                  <button
-                    type="button"
-                    className="mt-3 w-full cursor-pointer border-0 bg-kenya-blue px-3 py-2 text-xs font-bold text-white hover:bg-[#153a6e] sm:w-auto dark:bg-[#669df6] dark:text-[#0f1114] dark:hover:bg-[#8ab4f8]"
-                    onClick={openChat}
-                  >
+                  <button type="button" className={cn(btnPrimary, 'mt-3 w-full sm:w-auto')} onClick={openChat}>
                     Ask ReAgent about this property →
                   </button>
                 </div>
@@ -774,11 +848,13 @@ export default function CatastropheDesk() {
                     <button
                       key={tab.id}
                       type="button"
-                      className={`-mb-px cursor-pointer border-0 border-b-2 bg-transparent px-3.5 py-2.5 text-xs font-semibold ${
+                      className={cn(
+                        btnSm,
+                        'rounded-full border-2 px-3.5 py-1.5 normal-case',
                         dossierTab === tab.id
-                          ? 'border-kenya-blue bg-[#f0f4fa] text-kenya-navy dark:bg-[#25282c]'
-                          : 'border-transparent text-kenya-muted hover:text-kenya-ink'
-                      }`}
+                          ? 'border-[#0f2d52] bg-[#0f2d52] font-bold text-white dark:border-[#1a4a8a] dark:bg-[#1a4a8a] dark:text-white'
+                          : 'border-kenya-line bg-white font-semibold text-kenya-muted hover:border-[#0f2d52] hover:text-[#0f2d52] dark:bg-[#1a1d21] dark:hover:border-[#dadce0] dark:hover:text-[#f1f3f4]'
+                      )}
                       onClick={() => setDossierTab(tab.id)}
                     >
                       {tab.label}
