@@ -5,6 +5,7 @@ import Link from 'next/link';
 import DualEpChart from '@/components/DualEpChart';
 import EpViewSwitch from '@/components/EpViewSwitch';
 import ModelEpUpload from '@/components/ModelEpUpload';
+import VulnerabilityChart from '@/components/VulnerabilityChart';
 import { fetchRagJson } from '@/lib/api';
 import { btnBase, cn } from '@/lib/buttons';
 
@@ -17,6 +18,7 @@ export default function EpCurvePage() {
   const [workspace, setWorkspace] = useState(null);
   const [modelLabel, setModelLabel] = useState('Team financial model');
   const [epView, setEpView] = useState('gross');
+  const [vulnerability, setVulnerability] = useState(null);
   const [err, setErr] = useState('');
 
   const loadCurve = useCallback(() => {
@@ -35,6 +37,7 @@ export default function EpCurvePage() {
       })
       .catch(() => {});
     loadCurve();
+    fetchRagJson('/api/nairobi/vulnerability').then(setVulnerability).catch(() => {});
   }, [loadCurve]);
 
   const external = curve?.external_model;
@@ -124,6 +127,22 @@ export default function EpCurvePage() {
             fetchRagJson('/api/workspace/status').then(setWorkspace);
           }}
         />
+
+        {vulnerability?.curves?.length ? (
+          <div className="space-y-2">
+            <p className="text-[11px] text-kenya-muted">
+              Matrix source: <code className="text-[10px]">{vulnerability.matrix_file}</code>
+              {vulnerability.housing_classes_in_exposure?.length ? (
+                <>
+                  {' '}
+                  · classes in your exposure:{' '}
+                  {vulnerability.housing_classes_in_exposure.join(', ')}
+                </>
+              ) : null}
+            </p>
+            <VulnerabilityChart curves={vulnerability.curves} />
+          </div>
+        ) : null}
 
         {hasLandscape ? (
           <div className="space-y-2">
