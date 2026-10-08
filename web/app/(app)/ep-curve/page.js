@@ -39,6 +39,19 @@ export default function EpCurvePage() {
 
   const external = curve?.external_model;
   const hasExternal = Boolean(external?.ep_curve?.length);
+  const landscapePts = curve?.ep_curve;
+  const hasLandscape = Boolean(landscapePts?.length && curve?.source === 'csv_hazard_landscape');
+
+  const landscapeSeries = useMemo(() => {
+    if (!hasLandscape) return [];
+    return [
+      {
+        id: 'raw',
+        label: 'Hazard-weighted exposure (CSV)',
+        points: landscapePts,
+      },
+    ];
+  }, [hasLandscape, landscapePts]);
   const viewsAvailable = external?.ep_views_available?.length
     ? external.ep_views_available
     : hasExternal
@@ -112,10 +125,27 @@ export default function EpCurvePage() {
           }}
         />
 
+        {hasLandscape ? (
+          <div className="space-y-2">
+            <h2 className="font-serif text-lg font-semibold text-kenya-navy">Current portfolio landscape</h2>
+            <p className="text-[11px] text-kenya-muted">
+              Matches the map pins and hazard tiers for the active exposure CSV. Y-axis is Σ(TIV × hazard score) at each
+              return period — an exposure index, not ground-up loss from your financial model.
+            </p>
+            <DualEpChart
+              series={landscapeSeries}
+              formatLoss={(v) => kes.format(v)}
+              singleSeries
+              title="Hazard landscape (from map CSV)"
+              subtitle="Updates when you upload a new exposure file on the map."
+            />
+          </div>
+        ) : null}
+
         {!hasExternal ? (
           <div className="rounded-2xl bg-kenya-panel p-6 text-center shadow-sm ring-1 ring-kenya-line/80">
             <p className="text-sm text-kenya-muted">
-              Upload your team EP CSV above to display the exceedance curve. Sample format:{' '}
+              Upload your team EP CSV above for financial exceedance loss. Sample format:{' '}
               <code className="text-xs">docs/sample_ep_curve_model.csv</code>
             </p>
             <Link href="/map" className={cn(btnBase, 'mt-4 inline-flex no-underline normal-case')}>
@@ -144,6 +174,7 @@ export default function EpCurvePage() {
 
         {hasExternal ? (
           <div className="space-y-3">
+            <h2 className="font-serif text-lg font-semibold text-kenya-navy">Team financial model</h2>
             <EpViewSwitch available={viewsAvailable} value={epView} onChange={setEpView} />
             <DualEpChart
               series={chartSeries}
