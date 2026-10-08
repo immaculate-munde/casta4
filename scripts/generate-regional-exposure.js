@@ -74,6 +74,19 @@ export const REGIONS = {
       { lat: 3.05, lon: 35.72, spread: 0.018, floodBias: 0.2, name: 'Kerio triangle fringe' },
     ],
   },
+  lusaka: {
+    slug: 'lusaka',
+    label: 'Lusaka',
+    prefix: 'LSK',
+    sourceNote: 'synthetic Lusaka Zambia urban flood demo for Casta4 — not a real portfolio',
+    clusters: [
+      { lat: -15.416, lon: 28.283, spread: 0.014, floodBias: 0.18, name: 'Lusaka CBD / Cairo Road' },
+      { lat: -15.458, lon: 28.295, spread: 0.016, floodBias: 0.52, name: 'Chawama / southern low drainage' },
+      { lat: -15.388, lon: 28.328, spread: 0.013, floodBias: 0.22, name: 'Matero / north belt' },
+      { lat: -15.402, lon: 28.385, spread: 0.012, floodBias: 0.15, name: 'Kabulonga / east' },
+      { lat: -15.372, lon: 28.352, spread: 0.015, floodBias: 0.44, name: 'Ngwerere / stream corridor' },
+    ],
+  },
 };
 
 function rnd(i, salt, regionSeed = 0) {
