@@ -4,3 +4,9 @@ node_modules
 
 # Local Netlify folder
 .netlify
+
+# Python (nairobi-flood-cat)
+__pycache__/
+*.py[cod]
+.venv/
+venv/
