@@ -6,9 +6,19 @@
     {
       "type": "exposure",
       "filename": "exposure_nairobi_with_hazard.csv",
+      "uploaded_at": "2026-10-08T11:45:13.150Z"
+    },
+    {
+      "type": "exposure",
+      "filename": "exposure_nairobi_with_hazard.csv",
+      "uploaded_at": "2026-10-08T11:43:34.042Z"
+    },
+    {
+      "type": "exposure",
+      "filename": "exposure_nairobi_with_hazard.csv",
       "uploaded_at": "2026-10-08T10:12:30.993Z"
     }
   ],
   "exposure_rows": 600,
-  "updated_at": "2026-10-08T10:12:30.996Z"
+  "updated_at": "2026-10-08T11:45:13.151Z"
 }
