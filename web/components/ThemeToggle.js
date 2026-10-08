@@ -1,14 +1,10 @@
 'use client';
 
 import { useTheme } from '@/components/ThemeProvider';
+import { btnBase } from '@/lib/buttons';
 
-const base =
-  'inline-flex items-center justify-center rounded-md border-2 font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2';
-
-const variants = {
-  light: `${base} border-kenya-line bg-white px-3 py-1.5 text-xs text-kenya-ink hover:bg-kenya-surface dark:border-[#5f6368] dark:bg-[#2d2e30] dark:text-[#e8eaed] dark:hover:bg-[#3c4043]`,
-  onDark: `${base} border-white/40 bg-white/10 px-3 py-1.5 text-xs text-white hover:bg-white/20`,
-};
+const onDark =
+  'inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-full border-2 border-white/70 bg-white/15 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-white/25 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white';
 
 export default function ThemeToggle({ variant = 'light', className = '' }) {
   const { theme, toggleTheme } = useTheme();
@@ -18,7 +14,7 @@ export default function ThemeToggle({ variant = 'light', className = '' }) {
     <button
       type="button"
       onClick={toggleTheme}
-      className={`${variants[variant] || variants.light} ${className}`}
+      className={`${variant === 'onDark' ? onDark : btnBase} ${className}`}
       aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
       title={isDark ? 'Light mode' : 'Dark mode'}
     >
