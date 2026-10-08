@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useId, useState } from 'react';
 import { IconUpload } from '@/components/NavIcons';
-import { fetchRagJson } from '@/lib/api';
+import { fetchRagJson, postRagJson } from '@/lib/api';
 import { btnPrimary, cn } from '@/lib/buttons';
 
 export default function ChatDocumentUpload() {
@@ -36,13 +36,10 @@ export default function ChatDocumentUpload() {
         setBusy(false);
         return;
       }
-      const res = await fetch('/api/workspace/document', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ filename: file.name.replace(/\.[^.]+$/, '') + '.txt', text }),
+      const data = await postRagJson('/api/workspace/document', {
+        filename: file.name.replace(/\.[^.]+$/, '') + '.txt',
+        text,
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Upload failed');
       setNote(`Added ${data.filename} — ReAgent will cite it in answers.`);
       await refresh();
     } catch (e) {

@@ -2,6 +2,7 @@
 
 import { useId, useState } from 'react';
 import { IconUpload } from '@/components/NavIcons';
+import { postRagJson } from '@/lib/api';
 import { btnPrimary, cn } from '@/lib/buttons';
 
 const inputClass =
@@ -20,17 +21,11 @@ export default function ModelEpUpload({ onSuccess, modelLabel, onModelLabelChang
     setMsg('');
     try {
       const csv = await file.text();
-      const res = await fetch('/api/workspace/ep-model', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          csv,
-          filename: file.name,
-          model_label: modelLabel?.trim() || 'Team financial model',
-        }),
+      const data = await postRagJson('/api/workspace/ep-model', {
+        csv,
+        filename: file.name,
+        model_label: modelLabel?.trim() || 'Team financial model',
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Upload failed');
       setMsg('External EP curve loaded — chart updated.');
       onSuccess?.(data);
     } catch (e) {
