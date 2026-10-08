@@ -44,7 +44,7 @@ export default function ModelEpUpload({ onSuccess, modelLabel, onModelLabelChang
     <div className="rounded-2xl bg-kenya-panel p-4 shadow-sm ring-1 ring-kenya-line/80">
       <h2 className="font-serif text-base font-semibold text-kenya-navy">Team model EP curve</h2>
       <p className="mt-1 text-[11px] leading-relaxed text-kenya-muted">
-        Upload your team&apos;s financial engine output (CSV). Required:{' '}
+        Upload your team&apos;s EP / loss output (CSV). Required:{' '}
         <code className="text-[10px]">return_period_years, loss_kes</code>. Optional:{' '}
         <code className="text-[10px]">loss_net_kes, loss_p05_kes, loss_p95_kes, aep, label</code>.
       </p>

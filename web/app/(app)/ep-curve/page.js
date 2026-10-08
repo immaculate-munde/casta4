@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import DualEpChart from '@/components/DualEpChart';
 import ModelEpUpload from '@/components/ModelEpUpload';
-import VulnerabilityDamageMatrix from '@/components/VulnerabilityDamageMatrix';
 import { fetchRagJson } from '@/lib/api';
 import { btnBase, cn } from '@/lib/buttons';
 
@@ -110,8 +109,6 @@ export default function EpCurvePage() {
             </div>
           </div>
         ) : null}
-
-        <VulnerabilityDamageMatrix />
 
         {hasExternal ? (
           <DualEpChart

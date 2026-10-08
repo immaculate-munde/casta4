@@ -132,9 +132,9 @@ export default function Dashboard({ embedded = false }) {
               accent: '',
             },
             {
-              label: 'Moderate Flood Loss',
-              value: flood ? kes.format(flood.moderate_loss_kes) : '—',
-              sub: '1-in-25 yr scenario',
+              label: 'Team EP (≥10 yr)',
+              value: flood?.moderate_loss_kes != null ? kes.format(flood.moderate_loss_kes) : '—',
+              sub: flood?.team_ep_loaded ? 'From uploaded EP CSV' : 'Upload on EP curve page',
               accent: 'border-l-4 border-l-kenya-coral',
             },
           ].map((kpi) => (
@@ -233,7 +233,7 @@ export default function Dashboard({ embedded = false }) {
                 Open map →
               </Link>
             </div>
-            <p className="mb-3 text-xs text-kenya-muted">Moderate scenario (1-in-25 yr)</p>
+            <p className="mb-3 text-xs text-kenya-muted">Highest hazard — moderate tier (CSV scores)</p>
             <div className="space-y-2">
               {flood?.top_risk_locations?.length ? (
                 flood.top_risk_locations.map((loc, i) => (
@@ -250,7 +250,7 @@ export default function Dashboard({ embedded = false }) {
                     </div>
                     <div className="text-right text-xs">
                       <span className="font-bold text-kenya-coral">{Math.round(loc.hazard * 100)}%</span>
-                      <span className="block text-kenya-muted">{kes.format(loc.loss_kes)}</span>
+                      <span className="block text-kenya-muted">{kes.format(loc.tiv_kes)} TIV</span>
                     </div>
                   </div>
                 ))
@@ -331,10 +331,10 @@ export default function Dashboard({ embedded = false }) {
               </span>
             </div>
             <div className="font-serif text-3xl font-semibold text-kenya-navy">
-              {flood ? kes.format(flood.severe_loss_kes) : '—'}
+              {flood?.severe_loss_kes != null ? kes.format(flood.severe_loss_kes) : '—'}
             </div>
             <p className="mt-1 text-xs text-kenya-muted">
-              Estimated portfolio ground-up loss · {flood ? flood.location_count : '—'} Nairobi locations
+              Team EP at severe return period · {flood ? flood.location_count : '—'} locations on map
             </p>
             <Link href="/map" className="mt-4 inline-block text-sm font-bold text-kenya-navy hover:underline">
               Model full scenario →

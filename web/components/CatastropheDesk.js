@@ -36,7 +36,6 @@ function locationsToGeoJSON(locations) {
         hazard_band: row.hazard_band || 'low',
         housing_label: row.housing_label || '',
         tiv_kes: row.tiv_kes || 0,
-        loss_kes: row.loss_kes || 0,
         cedant_name: row.cedant_name || '',
         cedant_id: row.cedant_id || '',
         kenya_re_in_book: row.kenya_re_in_book ? 1 : 0,
@@ -409,7 +408,6 @@ export default function CatastropheDesk({ shellMode = false, onPortfolioChange }
       lon: detail.lon,
       active_tier: activeTier,
       hazard: tierRow?.hazard ?? row?.hazard,
-      loss_kes: tierRow?.loss_kes ?? row?.loss_kes,
     });
     return () => setPropertyContext(null);
   }, [openId, detail, activeTier, locations, setPropertyContext]);
@@ -864,20 +862,16 @@ export default function CatastropheDesk({ shellMode = false, onPortfolioChange }
                 <div className="min-h-0 flex-1 overflow-auto p-4">
                   {dossierTab === 'overview' ? (
                     <>
-                      <div className="grid grid-cols-3 border-y border-kenya-line py-3">
+                      <div className="grid grid-cols-2 border-y border-kenya-line py-3">
                         <div className="px-1 text-center sm:px-2">
                           <strong className={`block text-lg ${level === 'high' ? 'text-kenya-coral' : level === 'watch' ? 'text-kenya-watch' : 'text-kenya-navy'}`}>
                             {hazardPct(activeLoss?.hazard)}
                           </strong>
-                          <span className="text-[11px] uppercase text-kenya-muted">Susceptibility ({activeTier})</span>
+                          <span className="text-[11px] uppercase text-kenya-muted">Hazard ({activeTier})</span>
                         </div>
                         <div className="px-1 text-center sm:px-2">
-                          <strong className="block text-lg text-kenya-navy">{pct.format(activeLoss?.damage_ratio || 0)}</strong>
-                          <span className="text-[11px] uppercase text-kenya-muted">Damage ratio</span>
-                        </div>
-                        <div className="px-1 text-center sm:px-2">
-                          <strong className="block text-lg text-kenya-navy">{kes.format(activeLoss?.loss_kes || 0)}</strong>
-                          <span className="text-[11px] uppercase text-kenya-muted">Modelled loss</span>
+                          <strong className="block text-lg text-kenya-navy">{kes.format(detail.tiv_kes)}</strong>
+                          <span className="text-[11px] uppercase text-kenya-muted">TIV</span>
                         </div>
                       </div>
                       <div className="my-3.5 h-1.5 bg-[#c8ced8] dark:bg-[#3c4043]">
@@ -904,8 +898,12 @@ export default function CatastropheDesk({ shellMode = false, onPortfolioChange }
                           <dd className="mt-1 text-[13px] font-semibold text-kenya-navy">{meta?.tiers?.find((t) => t.id === activeTier)?.label || activeTier}</dd>
                         </div>
                         <div>
-                          <dt className="text-[10px] font-bold uppercase text-kenya-muted">Portfolio loss @ tier</dt>
-                          <dd className="mt-1 text-[13px] font-semibold text-kenya-navy">{tierPortfolioLoss != null ? kes.format(tierPortfolioLoss) : '—'}</dd>
+                          <dt className="text-[10px] font-bold uppercase text-kenya-muted">Portfolio EP</dt>
+                          <dd className="mt-1 text-[13px] font-semibold text-kenya-navy">
+                            <Link href="/ep-curve" className="text-kenya-blue hover:underline">
+                              Team EP curve →
+                            </Link>
+                          </dd>
                         </div>
                         <div>
                           <dt className="text-[10px] font-bold uppercase text-kenya-muted">Cedant</dt>
@@ -920,29 +918,34 @@ export default function CatastropheDesk({ shellMode = false, onPortfolioChange }
                   ) : null}
                   {dossierTab === 'scenarios' ? (
                     <>
-                      <p className="mb-2 mt-4 text-xs font-bold uppercase text-kenya-navy">Loss by return period</p>
+                      <p className="mb-2 mt-4 text-xs font-bold uppercase text-kenya-navy">Hazard by scenario (from exposure CSV)</p>
                       <div className="overflow-x-auto">
-                        <table className="w-full min-w-[280px] border-collapse text-xs">
+                        <table className="w-full min-w-[240px] border-collapse text-xs">
                           <thead>
                             <tr>
                               <th className="border-b border-kenya-line py-1.5 text-left">Tier</th>
+                              <th className="border-b border-kenya-line py-1.5 text-left">Return period</th>
                               <th className="border-b border-kenya-line py-1.5 text-left">Hazard</th>
-                              <th className="border-b border-kenya-line py-1.5 text-left">Damage</th>
-                              <th className="border-b border-kenya-line py-1.5 text-left">Loss</th>
                             </tr>
                           </thead>
                           <tbody>
                             {(detail.tier_losses || []).map((t) => (
                               <tr key={t.tier} className={t.tier === activeTier ? 'bg-[#f3f6fb] dark:bg-[#25282c]' : ''}>
                                 <td className="border-b border-kenya-line py-1.5">{t.label}</td>
+                                <td className="border-b border-kenya-line py-1.5">~1-in-{t.return_period_years} yr</td>
                                 <td className="border-b border-kenya-line py-1.5">{hazardPct(t.hazard)}</td>
-                                <td className="border-b border-kenya-line py-1.5">{pct.format(t.damage_ratio)}</td>
-                                <td className="border-b border-kenya-line py-1.5">{kes.format(t.loss_kes)}</td>
                               </tr>
                             ))}
                           </tbody>
                         </table>
                       </div>
+                      <p className="mt-3 text-[11px] text-kenya-muted">
+                        Ground-up losses: upload team output on{' '}
+                        <Link href="/ep-curve" className="font-semibold text-kenya-blue hover:underline">
+                          EP curve
+                        </Link>
+                        .
+                      </p>
                     </>
                   ) : null}
                   {dossierTab === 'exposure' ? (

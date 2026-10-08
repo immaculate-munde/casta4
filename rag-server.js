@@ -13,8 +13,16 @@ import { cleanLlmAnswer } from './lib/clean-llm-answer.js';
 import { formatRetrievalResults } from './lib/rag-retrieval.js';
 import nairobiRouter from './lib/nairobi-routes.js';
 import workspaceRouter from './lib/workspace-routes.js';
-import { loadPortfolio, computePortfolioSummary, computeLossCurve } from './lib/nairobi-flood-cat.js';
+import { loadPortfolio, computePortfolioSummary, enrichRow } from './lib/nairobi-flood-cat.js';
+import { loadExternalEpCurve } from './lib/ep-curve-model.js';
 import { loadUploadedDocTexts } from './lib/workspace-store.js';
+
+function epLossAtOrAbove(external, minYears) {
+  const curve = external?.ep_curve;
+  if (!curve?.length) return null;
+  const sorted = [...curve].sort((a, b) => a.return_period_years - b.return_period_years);
+  return sorted.find((p) => p.return_period_years >= minYears)?.loss_kes ?? sorted[sorted.length - 1].loss_kes;
+}
 
 const app = express();
 app.set('trust proxy', 1);
@@ -321,22 +329,20 @@ app.get('/api/dashboard', async (_req, res) => {
     }));
 
     // Load flood portfolio
-    const { exposure, hotspots } = await loadPortfolio();
+    const { exposure } = await loadPortfolio();
     const summary = computePortfolioSummary(exposure);
-    const lossCurve = await computeLossCurve(exposure, hotspots, 'rectified');
-    const moderateLoss = lossCurve.points.find(p => p.tier === 'moderate');
-    const severeLoss = lossCurve.points.find(p => p.tier === 'severe');
+    const external = await loadExternalEpCurve();
+    const moderate_loss_kes = epLossAtOrAbove(external, 10);
+    const severe_loss_kes = epLossAtOrAbove(external, 50);
 
-    const { enrichRow } = await import('./lib/nairobi-flood-cat.js');
     const enriched = await Promise.all(exposure.map((row) => enrichRow(row, 'moderate')));
     const topRisk = enriched
       .sort((a, b) => b.hazard - a.hazard)
       .slice(0, 3)
-      .map(r => ({
+      .map((r) => ({
         loc_id: r.loc_id,
         housing_label: r.housing_label,
         hazard: r.hazard,
-        loss_kes: r.loss_kes,
         tiv_kes: r.tiv_kes,
       }));
 
@@ -360,8 +366,9 @@ app.get('/api/dashboard', async (_req, res) => {
       flood: {
         location_count: summary.location_count,
         total_tiv_kes: summary.total_tiv_kes,
-        moderate_loss_kes: moderateLoss?.portfolio_loss_kes || 0,
-        severe_loss_kes: severeLoss?.portfolio_loss_kes || 0,
+        moderate_loss_kes,
+        severe_loss_kes,
+        team_ep_loaded: Boolean(external?.ep_curve?.length),
         top_risk_locations: topRisk,
         by_housing: summary.by_housing,
       },
@@ -379,7 +386,7 @@ Promise.all([loadPortfolio(), loadRAG()])
       console.log(`  POST /rag  — ask.js and CLI (pure RAG)`);
       console.log(`  POST /ask  — Netlify / web alias`);
       console.log(`  GET  /health`);
-      console.log(`  GET  /api/nairobi/* — Nairobi flood CAT desk`);
+      console.log(`  GET  /api/nairobi/* — Nairobi flood portfolio API`);
     });
   })
   .catch((err) => {
