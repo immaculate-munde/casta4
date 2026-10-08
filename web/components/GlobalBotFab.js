@@ -9,7 +9,7 @@ export default function GlobalBotFab() {
   const pathname = usePathname();
   const { openChat, open: chatDrawerOpen } = useChatDrawer();
 
-  if (pathname === '/signin') return null;
+  if (pathname === '/' || pathname === '/signin') return null;
   if (pathname === '/chat' || pathname.startsWith('/chat/')) return null;
   if (chatDrawerOpen) return null;
 

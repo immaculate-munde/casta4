@@ -3,81 +3,87 @@
 import Link from 'next/link';
 import ThemeToggle from '@/components/ThemeToggle';
 
-const FLOOD_BG =
-  'https://images.unsplash.com/photo-1527487834879-d9c99a33205d?auto=format&fit=crop&w=1920&q=80';
+const CAPABILITIES = [
+  {
+    title: 'Flood risk & exposure',
+    body: 'Nairobi flood book on the map — hazard scenarios, location-level loss context, and portfolio exceedance curves for pricing and accumulation.',
+  },
+  {
+    title: 'Claims & operations',
+    body: 'Live claims KPIs, severe-scenario indicators, and catastrophe metrics so teams can align loss experience with forward-looking flood risk.',
+  },
+  {
+    title: 'Underwriter assistant',
+    body: 'ReAgent supports financial and technical questions on policies, treaties, and claims — decision support alongside the CAT workspace.',
+  },
+];
 
 export default function LandingPage() {
   return (
-    <div className="relative min-h-screen bg-white text-kenya-ink dark:text-white">
-      <div
-        className="pointer-events-none absolute inset-0 hidden bg-cover bg-center bg-no-repeat dark:block"
-        style={{ backgroundImage: `url('${FLOOD_BG}')` }}
-        aria-hidden
-      />
-      <div
-        className="pointer-events-none absolute inset-0 hidden bg-gradient-to-b from-[#061018]/92 via-[#0a1628]/88 to-[#050a10]/96 dark:block"
-        aria-hidden
-      />
-
-      <header className="relative z-10 border-b border-kenya-line bg-white dark:border-white/25 dark:bg-black/20 dark:backdrop-blur-sm">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-2">
-            <span className="h-5 w-2 bg-kenya-coral" aria-hidden />
-            <span className="font-serif text-xl font-semibold text-kenya-navy dark:text-white">Kenya Re</span>
-            <span className="text-sm font-medium text-kenya-muted dark:text-white/90">Casta4</span>
+    <div className="min-h-screen bg-kenya-surface font-sans text-kenya-ink">
+      <div className="border-t-4 border-kenya-coral bg-kenya-panel shadow-sm">
+        <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-4 pt-[max(0.75rem,env(safe-area-inset-top))] sm:gap-4 sm:px-6">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <span className="h-[22px] w-2.5 shrink-0 bg-kenya-coral" aria-hidden />
+            <span className="font-serif text-xl font-semibold text-kenya-navy sm:text-2xl">Kenya Re</span>
+            <span className="truncate text-sm font-medium text-kenya-muted">Casta4 workspace</span>
           </div>
-          <div className="flex items-center gap-3">
-            <span className="dark:hidden">
-              <ThemeToggle variant="light" />
-            </span>
-            <span className="hidden dark:inline">
-              <ThemeToggle variant="onDark" />
-            </span>
+          <div className="flex shrink-0 items-center gap-3">
+            <ThemeToggle />
             <Link
               href="/signin"
-              className="rounded-md bg-kenya-coral px-5 py-2.5 text-sm font-bold text-white shadow-md ring-2 ring-kenya-coral/30 transition hover:bg-[#a82828] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-kenya-blue dark:shadow-lg dark:ring-white/40 dark:hover:ring-white/60 dark:focus-visible:outline-white"
+              className="rounded-full border-2 border-[#0f2d52] bg-[#0f2d52] px-5 py-2 text-sm font-bold text-white transition hover:bg-[#17386a]"
             >
               Sign in
             </Link>
           </div>
         </div>
-      </header>
+      </div>
 
-      <main className="relative z-10 mx-auto max-w-5xl px-6 py-16 md:py-24">
+      <main className="mx-auto max-w-5xl px-4 pb-[max(5rem,env(safe-area-inset-bottom))] pt-10 sm:px-6 sm:pb-20 sm:pt-12 md:pt-16">
         <section className="max-w-2xl">
-          <p className="text-xs font-bold uppercase tracking-widest text-kenya-blue dark:text-[#aecbfa]">
-            AI4I Hackathon 2026
-          </p>
-          <h1 className="mt-3 font-serif text-4xl font-semibold leading-tight text-kenya-navy md:text-5xl dark:text-white dark:drop-shadow-sm">
-            Flood catastrophe modelling meets document intelligence
+          <p className="text-xs font-bold uppercase tracking-widest text-kenya-blue">AI4I Hackathon 2026 · Nairobi</p>
+          <h1 className="mt-3 font-serif text-[1.75rem] font-semibold leading-tight text-kenya-navy sm:text-4xl md:text-[2.65rem] md:leading-[1.15]">
+            Better financial decisions on flood risk and claims
           </h1>
-          <p className="mt-5 text-lg leading-relaxed text-kenya-muted dark:text-white/95">
-            Dynamic exposure maps for any region CSV, plus ReAgent — underwriter chat grounded on policies, treaties,
-            and claim files. Open the assistant from the bot in the corner on any signed-in page.
+          <p className="mt-5 text-base leading-relaxed text-kenya-muted md:text-lg">
+            Casta4 helps underwriters and reinsurance analysts judge{' '}
+            <strong className="font-semibold text-kenya-navy">Nairobi urban flood</strong> exposure, modelled losses,
+            and claims context in one Kenya Re workspace — from the map and EP curve through operations dashboards.
           </p>
-          <Link
-            href="/signin"
-            className="mt-8 inline-block rounded-md bg-kenya-coral px-8 py-3.5 text-base font-bold text-white shadow-md ring-2 ring-kenya-coral/25 transition hover:bg-[#a82828] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-kenya-blue dark:shadow-xl dark:ring-white/50 dark:hover:ring-white/70 dark:focus-visible:outline-white"
-          >
-            Sign in
-          </Link>
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+            <Link
+              href="/signin"
+              className="inline-flex w-full justify-center rounded-full bg-kenya-coral px-8 py-3 text-base font-bold text-white shadow-sm ring-2 ring-kenya-coral/30 transition hover:bg-[#a82828] sm:w-auto"
+            >
+              Sign in to workspace
+            </Link>
+            <a
+              href="#capabilities"
+              className="inline-flex w-full justify-center rounded-full border-2 border-kenya-line bg-white px-6 py-3 text-sm font-bold text-[#0f2d52] transition hover:border-[#0f2d52] sm:w-auto"
+            >
+              What you can do
+            </a>
+          </div>
         </section>
 
-        <section className="mt-16 grid gap-4 md:grid-cols-3">
-          {[
-            { title: 'Catastrophe desk', body: 'Map, tiers, and rich location dossiers when you select a pin.' },
-            { title: 'Operations dashboard', body: 'Claims KPIs and flood scenarios from live API data.' },
-            { title: 'ReAgent chat', body: 'Sidebar history, full-screen toggle, document source tags.' },
-          ].map((card) => (
+        <section id="capabilities" className="mt-14 grid gap-4 md:grid-cols-3">
+          {CAPABILITIES.map((card) => (
             <article
               key={card.title}
-              className="rounded-sm border border-kenya-line bg-white p-5 shadow-sm dark:border-white/35 dark:bg-black/45 dark:shadow-lg dark:backdrop-blur-md"
+              className="border border-kenya-line bg-kenya-panel p-5 shadow-sm transition hover:border-[#0f2d52]/40"
             >
-              <h2 className="font-serif text-lg font-semibold text-kenya-navy dark:text-white">{card.title}</h2>
-              <p className="mt-2 text-sm leading-relaxed text-kenya-muted dark:text-white/92">{card.body}</p>
+              <span className="inline-block h-1 w-10 bg-kenya-coral" aria-hidden />
+              <h2 className="mt-3 font-serif text-lg font-semibold text-kenya-navy">{card.title}</h2>
+              <p className="mt-2 text-sm leading-relaxed text-kenya-muted">{card.body}</p>
             </article>
           ))}
         </section>
+
+        <p className="mt-10 max-w-xl text-[11px] leading-relaxed text-kenya-muted">
+          Demo environment for Kenya Re. Sign in with a work email to open the flood desk, operations view, and
+          underwriter tools.
+        </p>
       </main>
     </div>
   );

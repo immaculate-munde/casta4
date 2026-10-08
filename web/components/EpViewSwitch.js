@@ -20,7 +20,10 @@ export default function EpViewSwitch({ available = [], value, onChange }) {
           type="button"
           role="tab"
           aria-selected={value === o.id}
-          className={cn(value === o.id ? btnPrimary : btnBase, 'normal-case')}
+          className={cn(
+            value === o.id ? btnPrimary : btnBase,
+            'min-h-10 flex-1 basis-[calc(50%-0.25rem)] normal-case text-xs sm:flex-none sm:basis-auto sm:text-xs'
+          )}
           onClick={() => onChange(o.id)}
         >
           {o.label}
