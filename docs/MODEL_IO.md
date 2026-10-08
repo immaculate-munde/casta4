@@ -45,3 +45,12 @@ Sample file: `docs/sample_ep_curve_model.csv`
 **API:** `GET /api/nairobi/vulnerability` — curves plus which housing classes appear in the current exposure CSV.
 
 The EP curve page charts the matrix; map location scenarios show interpolated damage ratio per tier.
+
+When **`CAT_MODEL_URL`** is set, vulnerability and portfolio EP come from **`nairobi-flood-cat/server.py`** (Linus JRC engine). Streamlit `app.py` is not used in production.
+
+Local:
+
+```bash
+cd nairobi-flood-cat && pip install -r requirements-server.txt && uvicorn server:app --port 8000
+# root .env: CAT_MODEL_URL=http://localhost:8000
+```

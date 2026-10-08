@@ -2,8 +2,11 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import CatDisclosures from '@/components/CatDisclosures';
+import CatEpAepChart from '@/components/CatEpAepChart';
 import DualEpChart from '@/components/DualEpChart';
 import EpViewSwitch from '@/components/EpViewSwitch';
+import EventLossTable from '@/components/EventLossTable';
 import ModelEpUpload from '@/components/ModelEpUpload';
 import VulnerabilityChart from '@/components/VulnerabilityChart';
 import { fetchRagJson } from '@/lib/api';
@@ -40,6 +43,31 @@ export default function EpCurvePage() {
     fetchRagJson('/api/nairobi/vulnerability').then(setVulnerability).catch(() => {});
   }, [loadCurve]);
 
+  const cat = curve?.cat_model;
+  const hasCat = Boolean(cat?.ep_curve_gross?.length || cat?.ep_curve_ai_gross?.length);
+  const useAi = cat?.use_ai_rectifier !== false;
+
+  const catSeries = useMemo(() => {
+    if (!hasCat) return [];
+    const out = [];
+    if (cat.ep_curve_baseline_gross?.length) {
+      out.push({
+        id: 'rectified',
+        label: 'Baseline (proxy only)',
+        points: cat.ep_curve_baseline_gross,
+        dashed: true,
+      });
+    }
+    if (cat.ep_curve_ai_gross?.length) {
+      out.push({
+        id: 'external',
+        label: 'AI rectified (drainage corrected)',
+        points: cat.ep_curve_ai_gross,
+      });
+    }
+    return out;
+  }, [cat, hasCat]);
+
   const external = curve?.external_model;
   const hasExternal = Boolean(external?.ep_curve?.length);
   const landscapePts = curve?.ep_curve;
@@ -47,14 +75,9 @@ export default function EpCurvePage() {
 
   const landscapeSeries = useMemo(() => {
     if (!hasLandscape) return [];
-    return [
-      {
-        id: 'raw',
-        label: 'Hazard-weighted exposure (CSV)',
-        points: landscapePts,
-      },
-    ];
+    return [{ id: 'raw', label: 'Hazard-weighted exposure (CSV)', points: landscapePts }];
   }, [hasLandscape, landscapePts]);
+
   const viewsAvailable = external?.ep_views_available?.length
     ? external.ep_views_available
     : hasExternal
@@ -95,12 +118,11 @@ export default function EpCurvePage() {
   }, [activeView, epView, modelLabel, workspace]);
 
   const uncertaintyBand =
-    epView === 'uncertainty'
-      ? activeView?.band || external?.uncertainty_band || null
-      : null;
+    epView === 'uncertainty' ? activeView?.band || external?.uncertainty_band || null : null;
 
   const primaryPts = activeView?.points;
   const extreme = primaryPts?.find((p) => p.return_period_years >= 100) || primaryPts?.[primaryPts.length - 1];
+  const cat100 = cat?.summary_100yr;
 
   return (
     <div className="h-full overflow-y-auto bg-kenya-surface p-4 sm:p-6">
@@ -111,13 +133,62 @@ export default function EpCurvePage() {
             {meta?.region_label || 'Portfolio'} · {summary ? kes.format(summary.total_tiv_kes) : '…'} TIV
           </p>
           <p className="mt-2 text-[11px] text-kenya-muted">
-            Model teams: pull structured exposure from{' '}
-            <code className="text-[10px]">GET /api/workspace/model-input</code> — see{' '}
-            <code className="text-[10px]">docs/MODEL_IO.md</code>.
+            Portfolio CAT from Linus engine (active exposure CSV) · optional team EP CSV override ·{' '}
+            <Link href="/settings" className="font-semibold text-kenya-blue hover:underline">
+              model controls
+            </Link>
           </p>
         </header>
 
         {err ? <p className="text-sm text-kenya-coral">{err}</p> : null}
+
+        {hasCat ? (
+          <div className="space-y-4 rounded-2xl ring-1 ring-kenya-line/80">
+            <h2 className="font-serif text-lg font-semibold text-kenya-navy">Portfolio catastrophe analytics (CAT)</h2>
+            {cat.hotspot_assets != null ? (
+              <p className="text-[11px] text-kenya-muted">
+                AI drainage: <strong>{cat.hotspot_assets}</strong> assets in hotspot corridors · 100-yr gross uplift vs
+                baseline{' '}
+                <strong>
+                  {cat.ai_uplift_gross_pct >= 0 ? '+' : ''}
+                  {(cat.ai_uplift_gross_pct ?? 0).toFixed(1)}%
+                </strong>
+              </p>
+            ) : null}
+            {cat100 ? (
+              <div className="grid gap-3 sm:grid-cols-3">
+                <div className="border border-kenya-line bg-kenya-panel p-4">
+                  <p className="text-[10px] font-bold uppercase text-kenya-muted">100-yr GUL</p>
+                  <p className="mt-1 text-lg font-semibold text-kenya-navy">{kes.format(cat100.ground_up_loss_kes)}</p>
+                </div>
+                <div className="border border-kenya-line bg-kenya-panel p-4">
+                  <p className="text-[10px] font-bold uppercase text-kenya-muted">100-yr gross</p>
+                  <p className="mt-1 text-lg font-semibold text-kenya-navy">{kes.format(cat100.gross_loss_kes)}</p>
+                </div>
+                <div className="border border-kenya-line bg-kenya-panel p-4">
+                  <p className="text-[10px] font-bold uppercase text-kenya-muted">100-yr net</p>
+                  <p className="mt-1 text-lg font-semibold text-kenya-navy">{kes.format(cat100.net_loss_kes)}</p>
+                </div>
+              </div>
+            ) : null}
+            <CatEpAepChart baselineElt={cat.elt_baseline} aiElt={cat.elt_ai} useAi={useAi} />
+            <DualEpChart
+              series={catSeries}
+              formatLoss={(v) => kes.format(v)}
+              title="Portfolio loss by return period (CAT)"
+              subtitle="Solid = AI rectified · dashed = baseline proxy — same tiers as map scenarios."
+            />
+            <EventLossTable
+              elt={cat.elt}
+              caption={useAi ? 'Showing AI-rectified ELT' : 'Showing baseline ELT (AI off in Settings)'}
+            />
+          </div>
+        ) : (
+          <div className="rounded-2xl border border-kenya-line bg-kenya-panel p-4 text-sm text-kenya-muted">
+            Start the Python CAT service and set <code className="text-xs">CAT_MODEL_URL</code> to see portfolio EP/ELT
+            (Streamlit Tab 1 equivalent).
+          </div>
+        )}
 
         <ModelEpUpload
           modelLabel={modelLabel}
@@ -130,15 +201,9 @@ export default function EpCurvePage() {
 
         {vulnerability?.curves?.length ? (
           <div className="space-y-2">
+            <h2 className="font-serif text-lg font-semibold text-kenya-navy">Vulnerability — damage matrix</h2>
             <p className="text-[11px] text-kenya-muted">
-              Matrix source: <code className="text-[10px]">{vulnerability.matrix_file}</code>
-              {vulnerability.housing_classes_in_exposure?.length ? (
-                <>
-                  {' '}
-                  · classes in your exposure:{' '}
-                  {vulnerability.housing_classes_in_exposure.join(', ')}
-                </>
-              ) : null}
+              Source: <code className="text-[10px]">{vulnerability.matrix_file || vulnerability.source}</code>
             </p>
             <VulnerabilityChart curves={vulnerability.curves} />
           </div>
@@ -146,68 +211,47 @@ export default function EpCurvePage() {
 
         {hasLandscape ? (
           <div className="space-y-2">
-            <h2 className="font-serif text-lg font-semibold text-kenya-navy">Current portfolio landscape</h2>
+            <h2 className="font-serif text-lg font-semibold text-kenya-navy">Hazard landscape (exposure CSV)</h2>
             <p className="text-[11px] text-kenya-muted">
-              Matches the map pins and hazard tiers for the active exposure CSV. Y-axis is Σ(TIV × hazard score) at each
-              return period — an exposure index, not ground-up loss from your financial model.
+              Σ(TIV × hazard) per tier — exposure index, not CAT financial loss.
             </p>
             <DualEpChart
               series={landscapeSeries}
               formatLoss={(v) => kes.format(v)}
               singleSeries
-              title="Hazard landscape (from map CSV)"
-              subtitle="Updates when you upload a new exposure file on the map."
+              title="Hazard landscape"
+              subtitle="Updates when you upload exposure on the map."
             />
-          </div>
-        ) : null}
-
-        {!hasExternal ? (
-          <div className="rounded-2xl bg-kenya-panel p-6 text-center shadow-sm ring-1 ring-kenya-line/80">
-            <p className="text-sm text-kenya-muted">
-              Upload your team EP CSV above for financial exceedance loss. Sample format:{' '}
-              <code className="text-xs">docs/sample_ep_curve_model.csv</code>
-            </p>
-            <Link href="/map" className={cn(btnBase, 'mt-4 inline-flex no-underline normal-case')}>
-              Back to map
-            </Link>
-          </div>
-        ) : null}
-
-        {extreme ? (
-          <div className="grid gap-3 sm:grid-cols-3">
-            <div className="border border-kenya-line bg-kenya-panel p-4">
-              <p className="text-[10px] font-bold uppercase text-kenya-muted">1-in-{extreme.return_period_years} yr</p>
-              <p className="mt-1 text-xl font-semibold text-kenya-navy">{kes.format(extreme.loss_kes)}</p>
-              <p className="mt-1 text-[10px] text-kenya-muted capitalize">{epView.replace('_', ' ')} view</p>
-            </div>
-            <div className="border border-kenya-line bg-kenya-panel p-4">
-              <p className="text-[10px] font-bold uppercase text-kenya-muted">Locations</p>
-              <p className="mt-1 text-xl font-semibold text-kenya-navy">{summary?.location_count ?? '—'}</p>
-            </div>
-            <div className="border border-kenya-line bg-kenya-panel p-4">
-              <p className="text-[10px] font-bold uppercase text-kenya-muted">Model</p>
-              <p className="mt-1 text-sm font-semibold text-kenya-navy">{modelLabel}</p>
-            </div>
           </div>
         ) : null}
 
         {hasExternal ? (
           <div className="space-y-3">
-            <h2 className="font-serif text-lg font-semibold text-kenya-navy">Team financial model</h2>
+            <h2 className="font-serif text-lg font-semibold text-kenya-navy">Optional team EP CSV</h2>
             <EpViewSwitch available={viewsAvailable} value={epView} onChange={setEpView} />
+            {extreme ? (
+              <p className="text-xs text-kenya-muted">
+                1-in-{extreme.return_period_years} yr ({epView}): {kes.format(extreme.loss_kes)}
+              </p>
+            ) : null}
             <DualEpChart
               series={chartSeries}
               formatLoss={(v) => kes.format(v)}
               uncertaintyBand={uncertaintyBand}
               singleSeries
-              subtitle={
-                epView === 'uncertainty'
-                  ? 'Gross central estimate with p5–p95 band from your CSV. Switch views for net or gross only.'
-                  : 'One curve at a time — use the switch for gross, net, or uncertainty band.'
-              }
+              subtitle="External team output — separate from live CAT engine above."
             />
           </div>
         ) : null}
+
+        <div className="space-y-2">
+          <h2 className="font-serif text-lg font-semibold text-kenya-navy">Model assumptions & disclosures</h2>
+          <CatDisclosures />
+        </div>
+
+        <Link href="/map" className={cn(btnBase, 'inline-flex no-underline normal-case')}>
+          Back to map
+        </Link>
       </div>
     </div>
   );

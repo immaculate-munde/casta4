@@ -21,6 +21,21 @@ services:
         value: qwen/qwen3.8-27b
       - key: GROQ_MAX_TOKENS
         value: "500"
+      - key: CAT_MODEL_URL
+        fromService:
+          type: web
+          name: casta4-cat
+          envVarKey: RENDER_EXTERNAL_URL
+
+  - type: web
+    name: casta4-cat
+    runtime: python
+    region: frankfurt
+    plan: starter
+    rootDir: nairobi-flood-cat
+    buildCommand: pip install -r requirements-server.txt
+    startCommand: uvicorn server:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
 
   - type: web
     name: casta4-web

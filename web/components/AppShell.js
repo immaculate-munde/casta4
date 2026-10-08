@@ -26,20 +26,28 @@ const NAV = [
 ];
 
 function NavLink({ href, label, active, collapsed, Icon }) {
+  const activeCls =
+    'bg-[#0f2d52] !text-white shadow-sm dark:bg-[#2563b8] dark:!text-white lg:border-l-[3px] lg:border-kenya-coral lg:pl-[calc(0.75rem-3px)]';
+  const idleCls =
+    'text-[#0f2d52] hover:bg-[#e8ecf2] dark:text-[#e8eaed] dark:hover:bg-[#25282c]';
+
   return (
     <Link
       href={href}
-      title={collapsed ? label : undefined}
       className={`flex items-center gap-3 rounded-md py-2.5 text-sm font-semibold no-underline transition-colors ${
-        collapsed ? 'lg:justify-center lg:px-2' : 'px-3'
-      } ${
-        active
-          ? 'bg-kenya-navy text-white shadow-sm dark:bg-[#1a4a8a] dark:text-white lg:border-l-[3px] lg:border-kenya-coral lg:pl-[calc(0.75rem-3px)]'
-          : 'text-kenya-ink hover:bg-kenya-surface dark:hover:bg-[#25282c]'
-      } ${active && collapsed ? 'lg:border-l-0 lg:pl-2 lg:ring-2 lg:ring-kenya-coral/80' : ''}`}
+        collapsed ? 'lg:flex-col lg:gap-1.5 lg:px-1.5 lg:py-2.5 lg:text-center' : 'px-3'
+      } ${active ? activeCls : idleCls} ${
+        active && collapsed ? 'lg:border-l-0 lg:pl-1.5 lg:ring-2 lg:ring-kenya-coral/80' : ''
+      }`}
     >
-      <Icon className="h-5 w-5 shrink-0 opacity-90" />
-      <span className={collapsed ? 'lg:sr-only' : ''}>{label}</span>
+      <Icon className={`h-5 w-5 shrink-0 ${active ? 'text-white' : 'text-current'}`} />
+      <span
+        className={`min-w-0 break-words leading-snug ${active ? 'text-white' : 'text-current'} ${
+          collapsed ? 'lg:w-full lg:text-[11px] lg:font-bold' : ''
+        }`}
+      >
+        {label}
+      </span>
     </Link>
   );
 }
@@ -77,11 +85,12 @@ export default function AppShell({ children }) {
         <button
           type="button"
           onClick={toggleSidebar}
-          className={`${btnBase} hidden shrink-0 !p-2 lg:inline-flex`}
+          className={`${btnBase} hidden shrink-0 gap-2 !px-3 !py-2 lg:inline-flex`}
           aria-expanded={sidebarOpen}
           aria-label={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
         >
-          <IconPanelLeft className="h-5 w-5" />
+          <IconPanelLeft className="h-5 w-5 shrink-0" />
+          <span className="text-xs font-bold normal-case">{sidebarOpen ? 'Hide menu' : 'Show menu'}</span>
         </button>
         <Link href="/map" className="flex min-w-0 items-center gap-2 no-underline">
           <span className="inline-block h-[22px] w-2.5 shrink-0 bg-kenya-coral" aria-hidden />
@@ -96,8 +105,8 @@ export default function AppShell({ children }) {
 
       <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
         <nav
-          className={`hidden shrink-0 flex-col gap-0.5 overflow-hidden border-kenya-line bg-kenya-panel transition-[width] duration-200 lg:flex lg:border-r lg:py-3 ${
-            sidebarOpen ? 'lg:w-56 lg:px-2' : 'lg:w-[4.25rem] lg:px-1.5'
+          className={`hidden shrink-0 flex-col gap-1 overflow-y-auto overflow-x-visible border-kenya-line bg-kenya-panel transition-[width] duration-200 lg:flex lg:border-r lg:py-3 ${
+            sidebarOpen ? 'lg:w-56 lg:px-2' : 'lg:w-[6.75rem] lg:px-1.5'
           }`}
           aria-label="Main"
         >
@@ -123,12 +132,14 @@ export default function AppShell({ children }) {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex shrink-0 flex-col items-center gap-0.5 rounded-md px-2 py-1.5 text-[9px] font-bold uppercase no-underline ${
-                pathname === item.href ? 'text-kenya-coral' : 'text-kenya-muted'
+              className={`flex shrink-0 flex-col items-center gap-1 rounded-md px-2.5 py-2 text-[11px] font-bold normal-case leading-tight no-underline ${
+                pathname === item.href
+                  ? 'bg-[#0f2d52] text-white dark:bg-[#2563b8] dark:text-white'
+                  : 'text-[#0f2d52] dark:text-[#e8eaed]'
               }`}
             >
-              <item.Icon className="h-5 w-5" />
-              {item.short}
+              <item.Icon className="h-5 w-5 shrink-0 text-current" />
+              <span className="max-w-[4.5rem] text-center leading-tight">{item.label}</span>
             </Link>
           ))}
         </nav>

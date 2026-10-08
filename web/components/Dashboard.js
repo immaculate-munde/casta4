@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import SignOutButton from '@/components/SignOutButton';
 import ThemeToggle from '@/components/ThemeToggle';
+import EventLossTable from '@/components/EventLossTable';
 import { fetchRagJson } from '@/lib/api';
 
 const kes = new Intl.NumberFormat('en-KE', {
@@ -132,9 +133,17 @@ export default function Dashboard({ embedded = false }) {
               accent: '',
             },
             {
-              label: 'Team EP (≥10 yr)',
-              value: flood?.moderate_loss_kes != null ? kes.format(flood.moderate_loss_kes) : '—',
-              sub: flood?.team_ep_loaded ? 'From uploaded EP CSV' : 'Upload on EP curve page',
+              label: flood?.cat_engine_loaded ? '100-yr gross (CAT)' : 'Team EP (≥10 yr)',
+              value: flood?.cat_100yr?.gross_loss_kes
+                ? kes.format(flood.cat_100yr.gross_loss_kes)
+                : flood?.moderate_loss_kes != null
+                  ? kes.format(flood.moderate_loss_kes)
+                  : '—',
+              sub: flood?.cat_engine_loaded
+                ? `Linus engine · AI ${flood.cat_use_ai ? 'on' : 'off'} · ${flood.cat_hotspot_assets ?? 0} hotspot assets`
+                : flood?.team_ep_loaded
+                  ? 'From uploaded EP CSV'
+                  : 'Start CAT service or upload EP',
               accent: 'border-l-4 border-l-kenya-coral',
             },
           ].map((kpi) => (
@@ -148,6 +157,68 @@ export default function Dashboard({ embedded = false }) {
             </div>
           ))}
         </section>
+
+        {flood?.cat_engine_loaded ? (
+          <section className="mb-6 space-y-4">
+            <div className="rounded-sm border border-kenya-line bg-[#e8eef8] px-4 py-3 text-xs text-kenya-navy dark:bg-[#25282c] dark:text-[#e8eaed]">
+              AI drainage rectifier:{' '}
+              <strong>
+                {flood.cat_hotspot_assets ?? 0}/{flood.location_count ?? '—'}
+              </strong>{' '}
+              assets in hotspot corridors
+              {flood.cat_ai_uplift_gross_pct != null ? (
+                <>
+                  {' '}
+                  · 100-yr gross uplift vs baseline:{' '}
+                  <strong>
+                    {flood.cat_ai_uplift_gross_pct >= 0 ? '+' : ''}
+                    {flood.cat_ai_uplift_gross_pct.toFixed(1)}%
+                  </strong>
+                </>
+              ) : null}
+              . Adjust controls in <Link href="/settings" className="font-semibold text-kenya-blue hover:underline">Settings</Link>.
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {[
+                {
+                  label: '100-yr ground-up (CAT)',
+                  value: kes.format(flood.cat_100yr?.ground_up_loss_kes ?? 0),
+                },
+                {
+                  label: '100-yr gross (CAT)',
+                  value: kes.format(flood.cat_100yr?.gross_loss_kes ?? 0),
+                },
+                {
+                  label: '100-yr net (CAT)',
+                  value: kes.format(flood.cat_100yr?.net_loss_kes ?? 0),
+                },
+                {
+                  label: 'Portfolio TSI',
+                  value: kes.format(flood.total_tiv_kes ?? 0),
+                  sub: `${flood.location_count} locations`,
+                },
+              ].map((k) => (
+                <div key={k.label} className="rounded-sm border-2 border-kenya-line bg-kenya-panel p-4 shadow-sm">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-kenya-ink/70">{k.label}</span>
+                  <div className="mt-1 font-serif text-xl font-semibold text-kenya-navy">{k.value}</div>
+                  {k.sub ? <span className="text-xs text-kenya-muted">{k.sub}</span> : null}
+                </div>
+              ))}
+            </div>
+            <div>
+              <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                <h2 className="font-serif text-lg font-semibold text-kenya-navy">Event loss table (CAT)</h2>
+                <Link href="/ep-curve" className="text-xs font-semibold text-kenya-blue hover:underline">
+                  EP curve & charts →
+                </Link>
+              </div>
+              <EventLossTable
+                elt={flood.cat_elt}
+                caption={`AI rectifier ${flood.cat_use_ai ? 'on' : 'off'} · same engine as Streamlit Tab 1`}
+              />
+            </div>
+          </section>
+        ) : null}
 
         <div className="grid gap-4 lg:grid-cols-12">
           <section className="rounded-sm border border-kenya-line bg-kenya-panel p-5 shadow-sm lg:col-span-4">

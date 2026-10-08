@@ -4,10 +4,12 @@ import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import EpLossLineChart from '@/components/EpLossLineChart';
 import ExposureCsvUpload from '@/components/ExposureCsvUpload';
+import UnderwritingSheet from '@/components/UnderwritingSheet';
 import SignOutButton from '@/components/SignOutButton';
 import ThemeToggle from '@/components/ThemeToggle';
 import { useChatDrawer } from '@/components/ChatDrawerProvider';
-import { fetchRagJson, ragApiBase } from '@/lib/api';
+import { fetchRagJson, postRagJson, ragApiBase } from '@/lib/api';
+import { dr100Band, housingToConstruction } from '@/lib/housing';
 import { btnBase, btnMapOverlay, btnPrimary, btnSm, cn } from '@/lib/buttons';
 
 const hazardPctClass = {
@@ -39,9 +41,26 @@ function locationsToGeoJSON(locations) {
         cedant_name: row.cedant_name || '',
         cedant_id: row.cedant_id || '',
         kenya_re_in_book: row.kenya_re_in_book ? 1 : 0,
+        dr_extreme: row.dr_extreme ?? 0,
+        dr_band: row.dr_band || row.hazard_band || 'low',
       },
     })),
   };
+}
+
+function mergeCatLocations(locs, catLocs) {
+  if (!catLocs?.length) return locs;
+  const byId = new Map(catLocs.map((c) => [c.loc_id, c]));
+  return locs.map((r) => {
+    const c = byId.get(r.loc_id);
+    if (!c) return r;
+    return {
+      ...r,
+      dr_extreme: c.dr_extreme,
+      dr_band: dr100Band(c.dr_extreme),
+      drainage_alpha: c.drainage_alpha,
+    };
+  });
 }
 
 function hotspotsToGeoJSON(hotspots) {
@@ -85,6 +104,10 @@ export default function CatastropheDesk({ shellMode = false, onPortfolioChange }
   const [bookOnly, setBookOnly] = useState(false);
   const [bookPanelOpen, setBookPanelOpen] = useState(false);
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [colorByDr100, setColorByDr100] = useState(false);
+  const [uwData, setUwData] = useState(null);
+  const [uwLoading, setUwLoading] = useState(false);
+  const [uwError, setUwError] = useState('');
   const { setPropertyContext, openChat } = useChatDrawer();
 
   const epNote = lossCurve?.points?.find((p) => p.tier === activeTier);
@@ -426,8 +449,9 @@ export default function CatastropheDesk({ shellMode = false, onPortfolioChange }
         const results = await Promise.all(fetches);
         if (cancelled) return;
         const exposure = results[0];
-        if (results[1]) setLossCurve(results[1]);
-        const locs = exposure.locations || [];
+        const curvePayload = results[1];
+        if (curvePayload) setLossCurve(curvePayload);
+        const locs = mergeCatLocations(exposure.locations || [], curvePayload?.cat_model?.locations);
         setLocations(locs);
         updateExposureSource(locs);
 
@@ -457,6 +481,47 @@ export default function CatastropheDesk({ shellMode = false, onPortfolioChange }
       cancelled = true;
     };
   }, [activeTier, mapReady, updateExposureSource, shellMode]);
+
+  useEffect(() => {
+    const map = mapInstance.current;
+    if (!map || !mapReady || !map.getLayer('exposure-circles')) return;
+    const prop = colorByDr100 && lossCurve?.cat_model ? 'dr_band' : 'hazard_band';
+    map.setPaintProperty('exposure-circles', 'circle-color', [
+      'match',
+      ['get', prop],
+      'high',
+      BAND_COLOUR.high,
+      'watch',
+      BAND_COLOUR.watch,
+      BAND_COLOUR.low,
+    ]);
+  }, [colorByDr100, mapReady, lossCurve?.cat_model]);
+
+  useEffect(() => {
+    if (dossierTab !== 'underwrite' || !detail) return;
+    let cancelled = false;
+    setUwLoading(true);
+    setUwError('');
+    postRagJson('/api/cat/underwrite-single', {
+      lat: detail.lat,
+      lon: detail.lon,
+      sum_insured_kes: detail.tiv_kes,
+      construction_type: housingToConstruction(detail.housing_class),
+      has_basement: false,
+    })
+      .then((data) => {
+        if (!cancelled) setUwData(data);
+      })
+      .catch((e) => {
+        if (!cancelled) setUwError(e.message);
+      })
+      .finally(() => {
+        if (!cancelled) setUwLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [dossierTab, detail]);
 
   useEffect(() => {
     const map = mapInstance.current;
@@ -542,12 +607,12 @@ export default function CatastropheDesk({ shellMode = false, onPortfolioChange }
           <p className="min-w-0 flex-1 truncate text-xs font-medium text-kenya-muted" title={summaryText}>
             {summaryText}
           </p>
-          <Link href="/ep-curve" className={cn(btnBase, btnSm, 'shrink-0 no-underline')}>
+          <Link href="/ep-curve" className={cn(btnBase, btnSm, 'shrink-0 no-underline normal-case')}>
             EP curve
           </Link>
           <button
             type="button"
-            className={cn(btnPrimary, btnSm, 'shrink-0')}
+            className={cn(btnPrimary, btnSm, 'shrink-0 normal-case')}
             onClick={() => setUploadOpen((v) => !v)}
           >
             {uploadOpen ? 'Close upload' : 'Upload CSV'}
@@ -688,7 +753,7 @@ export default function CatastropheDesk({ shellMode = false, onPortfolioChange }
 
           <div className="pointer-events-none absolute inset-x-0 top-0 z-[500] flex gap-2 p-2 sm:hidden">
             <label className="pointer-events-auto flex min-w-0 flex-1 flex-col gap-0.5">
-              <span className="sr-only">Hazard scenario</span>
+              <span className="text-[10px] font-bold text-kenya-navy drop-shadow-sm">Hazard scenario</span>
               <select
                 id="tier-select-mobile"
                 className="w-full border border-kenya-line bg-kenya-panel/95 px-2 py-2 text-xs font-semibold shadow-sm backdrop-blur-sm"
@@ -745,7 +810,7 @@ export default function CatastropheDesk({ shellMode = false, onPortfolioChange }
               <i className="inline-block h-2.5 w-2.5 rounded-full border-2 border-kenya-coral bg-transparent" aria-hidden /> Treaty book (ring)
             </span>
           </div>
-          <div className="absolute left-3 top-3 z-[500] flex flex-col gap-2 sm:top-3">
+          <div className="absolute left-3 top-14 z-[500] flex max-w-[calc(100%-1.5rem)] flex-col gap-2 sm:top-3">
             {shellMode ? (
               <button type="button" className={btnMapOverlay} onClick={() => setBookListOpen((v) => !v)}>
                 {bookListOpen ? 'Hide list' : 'Show list'}
@@ -759,6 +824,16 @@ export default function CatastropheDesk({ shellMode = false, onPortfolioChange }
             >
               {pitch3d ? '2D' : '3D'}
             </button>
+            {lossCurve?.cat_model ? (
+              <button
+                type="button"
+                className={btnMapOverlay}
+                onClick={() => setColorByDr100((v) => !v)}
+                title="Colour pins by 100-year modelled damage ratio"
+              >
+                {colorByDr100 ? 'Hazard colours' : '100-yr DR colours'}
+              </button>
+            ) : null}
           </div>
           <section
             className={`absolute right-3 z-[500] hidden w-[min(320px,calc(100%-1.5rem))] border border-kenya-line bg-kenya-panel p-3 sm:block ${
@@ -843,10 +918,11 @@ export default function CatastropheDesk({ shellMode = false, onPortfolioChange }
                     Ask ReAgent about this property →
                   </button>
                 </div>
-                <nav className="mt-3 flex shrink-0 gap-0 border-b border-kenya-line px-4" aria-label="Location detail sections">
+                <nav className="mt-3 flex shrink-0 flex-wrap gap-2 border-b border-kenya-line px-4 pb-2" aria-label="Location detail sections">
                   {[
                     { id: 'overview', label: 'Overview' },
                     { id: 'scenarios', label: 'Scenarios' },
+                    { id: 'underwrite', label: 'Underwriting' },
                     { id: 'exposure', label: 'Exposure' },
                   ].map((tab) => (
                     <button
@@ -857,7 +933,7 @@ export default function CatastropheDesk({ shellMode = false, onPortfolioChange }
                         'rounded-full border-2 px-3.5 py-1.5 normal-case',
                         dossierTab === tab.id
                           ? 'border-[#0f2d52] bg-[#0f2d52] font-bold text-white dark:border-[#1a4a8a] dark:bg-[#1a4a8a] dark:text-white'
-                          : 'border-kenya-line bg-white font-semibold text-kenya-muted hover:border-[#0f2d52] hover:text-[#0f2d52] dark:bg-[#1a1d21] dark:hover:border-[#dadce0] dark:hover:text-[#f1f3f4]'
+                          : 'border-kenya-line bg-white font-semibold text-[#0f2d52] hover:border-[#0f2d52] dark:bg-[#1a1d21] dark:text-[#e8eaed] dark:hover:border-[#dadce0]'
                       )}
                       onClick={() => setDossierTab(tab.id)}
                     >
@@ -957,6 +1033,17 @@ export default function CatastropheDesk({ shellMode = false, onPortfolioChange }
                         </Link>
                         .
                       </p>
+                    </>
+                  ) : null}
+                  {dossierTab === 'underwrite' ? (
+                    <>
+                      <p className="mb-2 mt-4 text-xs font-bold uppercase text-kenya-navy">
+                        Single property underwriting (CAT)
+                      </p>
+                      <p className="mb-3 text-[11px] text-kenya-muted">
+                        Raster hazard at this point + drainage α + JRC damage — Streamlit Tab 2 equivalent.
+                      </p>
+                      <UnderwritingSheet data={uwData} loading={uwLoading} error={uwError} />
                     </>
                   ) : null}
                   {dossierTab === 'exposure' ? (

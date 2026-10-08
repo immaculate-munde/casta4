@@ -13,6 +13,8 @@ import { cleanLlmAnswer } from './lib/clean-llm-answer.js';
 import { formatRetrievalResults } from './lib/rag-retrieval.js';
 import nairobiRouter from './lib/nairobi-routes.js';
 import workspaceRouter from './lib/workspace-routes.js';
+import catRouter from './lib/cat-routes.js';
+import { catEngineHealthy, catModelConfigured, runCatSimulation } from './lib/cat-engine-client.js';
 import { loadPortfolio, computePortfolioSummary, enrichRow } from './lib/nairobi-flood-cat.js';
 import { loadExternalEpCurve } from './lib/ep-curve-model.js';
 import { loadUploadedDocTexts } from './lib/workspace-store.js';
@@ -48,6 +50,7 @@ app.use('/api/workspace', express.json({ limit: '15mb' }), workspaceRouter);
 app.use(express.json({ limit: '10kb' }));
 
 app.use('/api/nairobi', nairobiRouter);
+app.use('/api/cat', catRouter);
 
 let vectorStore;
 
@@ -335,8 +338,22 @@ app.get('/api/dashboard', async (_req, res) => {
     const { exposure } = await loadPortfolio();
     const summary = computePortfolioSummary(exposure);
     const external = await loadExternalEpCurve();
-    const moderate_loss_kes = epLossAtOrAbove(external, 10);
-    const severe_loss_kes = epLossAtOrAbove(external, 50);
+    let moderate_loss_kes = epLossAtOrAbove(external, 10);
+    let severe_loss_kes = epLossAtOrAbove(external, 50);
+
+    let cat = null;
+    if (catModelConfigured() && (await catEngineHealthy())) {
+      try {
+        cat = await runCatSimulation();
+        const s100 = cat.summary_100yr;
+        if (s100?.gross_loss_kes != null) {
+          moderate_loss_kes = moderate_loss_kes ?? epLossAtOrAbove({ ep_curve: cat.ep_curve_gross }, 10);
+          severe_loss_kes = severe_loss_kes ?? epLossAtOrAbove({ ep_curve: cat.ep_curve_gross }, 50);
+        }
+      } catch (err) {
+        console.warn('Dashboard CAT simulation skipped:', err.message);
+      }
+    }
 
     const enriched = await Promise.all(exposure.map((row) => enrichRow(row, 'moderate')));
     const topRisk = enriched
@@ -372,6 +389,16 @@ app.get('/api/dashboard', async (_req, res) => {
         moderate_loss_kes,
         severe_loss_kes,
         team_ep_loaded: Boolean(external?.ep_curve?.length),
+        cat_engine_loaded: Boolean(cat),
+        cat_use_ai: cat?.use_ai_rectifier ?? null,
+        cat_hotspot_assets: cat?.hotspot_assets ?? null,
+        cat_100yr: cat?.summary_100yr ?? null,
+        cat_100yr_baseline: cat?.summary_100yr_baseline ?? null,
+        cat_100yr_ai: cat?.summary_100yr_ai ?? null,
+        cat_ai_uplift_gross_pct: cat?.ai_uplift_gross_pct ?? null,
+        cat_elt: cat?.elt ?? null,
+        cat_ep_baseline: cat?.ep_curve_baseline_gross ?? null,
+        cat_ep_ai: cat?.ep_curve_ai_gross ?? null,
         top_risk_locations: topRisk,
         by_housing: summary.by_housing,
       },
