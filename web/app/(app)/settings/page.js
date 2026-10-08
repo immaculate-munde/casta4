@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import ThemeToggle from '@/components/ThemeToggle';
 import { fetchRagJson, ragApiBase } from '@/lib/api';
+import CatDisclosures from '@/components/CatDisclosures';
+import CatModelSettings from '@/components/CatModelSettings';
 import { btnDanger } from '@/lib/buttons';
 
 export default function SettingsPage() {
@@ -37,6 +39,20 @@ export default function SettingsPage() {
           <div className="mt-3 flex items-center gap-3">
             <ThemeToggle />
             <span className="text-xs text-kenya-muted">Light / dark theme</span>
+          </div>
+        </section>
+
+        <section className="border border-kenya-line bg-kenya-panel p-4">
+          <h2 className="text-sm font-bold text-kenya-navy">CAT model controls</h2>
+          <div className="mt-3">
+            <CatModelSettings />
+          </div>
+        </section>
+
+        <section className="border border-kenya-line bg-kenya-panel p-4">
+          <h2 className="text-sm font-bold text-kenya-navy">Model disclosures</h2>
+          <div className="mt-3">
+            <CatDisclosures />
           </div>
         </section>
 

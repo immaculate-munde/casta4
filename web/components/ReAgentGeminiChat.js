@@ -254,10 +254,11 @@ export default function ReAgentGeminiChat({ onClose, fullscreen, onToggleFullscr
             <button
               type="button"
               onClick={() => setSidebarOpen((v) => !v)}
-              className={cn(btnBase, '!p-2')}
+              className={cn(btnBase, 'gap-2 !px-3 !py-2 normal-case')}
               aria-label={sidebarOpen ? 'Close sidebar' : 'Open sidebar'}
             >
-              <IconPanelLeft className="h-5 w-5" />
+              <IconPanelLeft className="h-5 w-5 shrink-0" />
+              <span className="text-xs font-bold">{sidebarOpen ? 'Hide history' : 'Show history'}</span>
             </button>
             <p
               className="min-w-0 flex-1 truncate text-sm font-semibold sm:text-base"

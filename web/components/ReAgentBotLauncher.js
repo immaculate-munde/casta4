@@ -13,7 +13,7 @@ export default function ReAgentBotLauncher({ href = '/chat', onActivate, classNa
   const inner = (
     <>
       <span
-        className="pointer-events-none absolute -top-12 right-0 hidden w-max max-w-[200px] translate-y-1 rounded-lg bg-kenya-navy px-3 py-2 text-xs font-semibold text-white opacity-0 shadow-lg transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100 md:block"
+        className="pointer-events-none absolute -top-12 right-0 hidden w-max max-w-[200px] rounded-lg bg-kenya-navy px-3 py-2 text-xs font-semibold text-white shadow-lg md:block"
         aria-hidden
       >
         Chat with ReAgent
@@ -34,7 +34,7 @@ export default function ReAgentBotLauncher({ href = '/chat', onActivate, classNa
         </span>
       </span>
 
-      <span className="mt-2 rounded-full bg-kenya-panel px-2 py-1 text-center text-[10px] font-bold uppercase tracking-wide text-kenya-ink shadow-md ring-1 ring-kenya-line md:opacity-0 md:transition-opacity md:duration-300 md:group-hover:opacity-100">
+      <span className="mt-2 rounded-full bg-kenya-panel px-2.5 py-1 text-center text-[11px] font-bold normal-case text-kenya-ink shadow-md ring-1 ring-kenya-line">
         Tap to open chat
       </span>
     </>
