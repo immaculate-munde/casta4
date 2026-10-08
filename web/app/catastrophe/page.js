@@ -1,6 +1,5 @@
-import 'maplibre-gl/dist/maplibre-gl.css';
-import CatastropheClient from './CatastropheClient';
+import { redirect } from 'next/navigation';
 
-export default function CatastrophePage() {
-  return <CatastropheClient />;
+export default function CatastropheRedirect() {
+  redirect('/map');
 }
