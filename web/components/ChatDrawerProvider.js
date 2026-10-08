@@ -15,6 +15,8 @@ export default function ChatDrawerProvider({ children }) {
   const [open, setOpen] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
   const [propertyContext, setPropertyContext] = useState(null);
+  /** Move floating ReAgent away from the map property panel when open. */
+  const [fabPreferLeft, setFabPreferLeft] = useState(false);
 
   const openChat = useCallback(() => setOpen(true), []);
   const closeChat = useCallback(() => {
@@ -34,6 +36,8 @@ export default function ChatDrawerProvider({ children }) {
         toggleFullscreen,
         propertyContext,
         setPropertyContext,
+        fabPreferLeft,
+        setFabPreferLeft,
       }}
     >
       {children}

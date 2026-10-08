@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import ThemeToggle from '@/components/ThemeToggle';
+import { btnPrimary, btnSecondary } from '@/lib/buttons';
 
 const CAPABILITIES = [
   {
@@ -30,10 +31,7 @@ export default function LandingPage() {
           </div>
           <div className="flex shrink-0 items-center gap-3">
             <ThemeToggle />
-            <Link
-              href="/signin"
-              className="rounded-full border-2 border-[#0f2d52] bg-[#0f2d52] px-5 py-2 text-sm font-bold text-white transition hover:bg-[#17386a]"
-            >
+            <Link href="/signin" className={`${btnPrimary} px-5 py-2 no-underline`}>
               Sign in
             </Link>
           </div>
@@ -54,14 +52,11 @@ export default function LandingPage() {
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
             <Link
               href="/signin"
-              className="inline-flex w-full justify-center rounded-full bg-kenya-coral px-8 py-3 text-base font-bold text-white shadow-sm ring-2 ring-kenya-coral/30 transition hover:bg-[#a82828] sm:w-auto"
+              className={`${btnPrimary} inline-flex w-full justify-center !border-kenya-coral !bg-kenya-coral px-8 py-3 text-base shadow-sm ring-2 ring-kenya-coral/30 hover:!bg-[#a82828] sm:w-auto`}
             >
               Sign in to workspace
             </Link>
-            <a
-              href="#capabilities"
-              className="inline-flex w-full justify-center rounded-full border-2 border-kenya-line bg-white px-6 py-3 text-sm font-bold text-[#0f2d52] transition hover:border-[#0f2d52] sm:w-auto"
-            >
+            <a href="#capabilities" className={`${btnSecondary} inline-flex w-full justify-center px-6 py-3 sm:w-auto`}>
               What you can do
             </a>
           </div>
