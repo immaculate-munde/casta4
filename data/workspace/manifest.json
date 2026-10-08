@@ -5,6 +5,11 @@
   "uploads": [
     {
       "type": "exposure",
+      "filename": "exposure_nzoia_synthetic.csv",
+      "uploaded_at": "2026-10-08T15:22:25.549Z"
+    },
+    {
+      "type": "exposure",
       "filename": "exposure_mombasa_with_hazard.csv",
       "uploaded_at": "2026-10-08T13:26:26.553Z"
     },
@@ -34,6 +39,6 @@
       "uploaded_at": "2026-10-08T10:12:30.993Z"
     }
   ],
-  "exposure_rows": 150,
-  "updated_at": "2026-10-08T13:26:26.554Z"
+  "exposure_rows": 500,
+  "updated_at": "2026-10-08T15:22:25.550Z"
 }

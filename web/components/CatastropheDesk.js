@@ -10,6 +10,7 @@ import ThemeToggle from '@/components/ThemeToggle';
 import { useChatDrawer } from '@/components/ChatDrawerProvider';
 import { fetchRagJson, postRagJson, ragApiBase } from '@/lib/api';
 import { dr100Band, housingToConstruction } from '@/lib/housing';
+import { useWorkspaceFormat } from '@/components/WorkspaceFormatProvider';
 import { btnBase, btnMapOverlay, btnPrimary, btnSm, cn } from '@/lib/buttons';
 
 const hazardPctClass = {
@@ -17,9 +18,6 @@ const hazardPctClass = {
   watch: 'text-kenya-watch',
   low: 'text-kenya-navy',
 };
-
-const kes = new Intl.NumberFormat('en-KE', { style: 'currency', currency: 'KES', maximumFractionDigits: 0 });
-const pct = new Intl.NumberFormat('en-KE', { style: 'percent', maximumFractionDigits: 1 });
 
 function hazardPct(score) {
   return `${Math.round((score || 0) * 100)}%`;
@@ -82,6 +80,7 @@ const BAND_COLOUR = {
 };
 
 export default function CatastropheDesk({ shellMode = false, onPortfolioChange }) {
+  const { formatMoney, formatPct } = useWorkspaceFormat();
   const mapRef = useRef(null);
   const mapInstance = useRef(null);
   const popupRef = useRef(null);
@@ -357,7 +356,7 @@ export default function CatastropheDesk({ shellMode = false, onPortfolioChange }
           const region = metaData.region_label || 'Portfolio';
           const peril = metaData.peril_label || 'pluvial book';
           setSummaryText(
-            `${summary.location_count} locations · ${kes.format(summary.total_tiv_kes)} TIV · ${region} · ${peril}`
+            `${summary.location_count} locations · ${formatMoney.format(summary.total_tiv_kes)} TIV · ${region} · ${peril}`
           );
 
           map.getSource('hotspots')?.setData(hotspotsToGeoJSON(hotspotData.hotspots || []));
@@ -739,7 +738,7 @@ export default function CatastropheDesk({ shellMode = false, onPortfolioChange }
                 <span className={`text-right text-xs font-bold ${hazardPctClass[row.hazard_band] || hazardPctClass.low}`}>
                   {hazardPct(row.hazard)}
                 </span>
-                <span className="text-right text-[11px] tabular-nums text-kenya-muted">{kes.format(row.tiv_kes)}</span>
+                <span className="text-right text-[11px] tabular-nums text-kenya-muted">{formatMoney.format(row.tiv_kes)}</span>
               </button>
             ))}
             {locations.length > 120 ? (
@@ -846,14 +845,14 @@ export default function CatastropheDesk({ shellMode = false, onPortfolioChange }
             </p>
             <p className="mt-1 text-[11px] font-medium text-kenya-ink/90">
               {epNote
-                ? `${epNote.label}: avg hazard ${pct.format(epNote.loss_pct_of_tiv)} · index ${kes.format(epNote.hazard_weighted_tiv_kes ?? epNote.portfolio_loss_kes)}`
+                ? `${epNote.label}: avg hazard ${formatPct.format(epNote.loss_pct_of_tiv)} · index ${formatMoney.format(epNote.hazard_weighted_tiv_kes ?? epNote.portfolio_loss_kes)}`
                 : 'Upload exposure CSV to build curve'}
             </p>
             <EpLossLineChart
               epCurve={lossCurve?.ep_curve}
               maxLoss={maxEp}
               activeReturnPeriodYears={activeReturnPeriodYears}
-              formatLoss={(v) => kes.format(v)}
+              formatLoss={(v) => formatMoney.format(v)}
             />
             <Link href="/ep-curve" className={cn(btnBase, btnSm, 'mt-2 inline-flex w-full justify-center no-underline')}>
               Full EP & team model
@@ -862,7 +861,7 @@ export default function CatastropheDesk({ shellMode = false, onPortfolioChange }
               {(lossCurve?.points || []).map((p) => (
                 <div key={p.tier} className="flex justify-between text-[11px]">
                   <dt className={p.tier === activeTier ? 'font-bold text-kenya-navy' : 'text-kenya-muted'}>{p.label}</dt>
-                  <dd className="m-0 font-semibold text-kenya-navy">{pct.format(p.avg_hazard ?? p.loss_pct_of_tiv)}</dd>
+                  <dd className="m-0 font-semibold text-kenya-navy">{formatPct.format(p.avg_hazard ?? p.loss_pct_of_tiv)}</dd>
                 </div>
               ))}
             </dl>
@@ -952,7 +951,7 @@ export default function CatastropheDesk({ shellMode = false, onPortfolioChange }
                           <span className="text-[11px] uppercase text-kenya-muted">Hazard ({activeTier})</span>
                         </div>
                         <div className="px-1 text-center sm:px-2">
-                          <strong className="block text-lg text-kenya-navy">{kes.format(detail.tiv_kes)}</strong>
+                          <strong className="block text-lg text-kenya-navy">{formatMoney.format(detail.tiv_kes)}</strong>
                           <span className="text-[11px] uppercase text-kenya-muted">TIV</span>
                         </div>
                       </div>
@@ -1018,7 +1017,7 @@ export default function CatastropheDesk({ shellMode = false, onPortfolioChange }
                                 <td className="border-b border-kenya-line py-1.5">~1-in-{t.return_period_years} yr</td>
                                 <td className="border-b border-kenya-line py-1.5">{hazardPct(t.hazard)}</td>
                                 <td className="border-b border-kenya-line py-1.5">
-                                  {t.damage_ratio != null ? pct.format(t.damage_ratio) : '—'}
+                                  {t.damage_ratio != null ? formatPct.format(t.damage_ratio) : '—'}
                                 </td>
                               </tr>
                             ))}
@@ -1052,7 +1051,7 @@ export default function CatastropheDesk({ shellMode = false, onPortfolioChange }
                       <dl className="grid grid-cols-1 border-t border-kenya-line sm:grid-cols-2">
                         <div className="border-b border-kenya-line py-2 pr-2">
                           <dt className="text-[11px] text-kenya-muted">TIV</dt>
-                          <dd className="mt-0.5 font-semibold text-kenya-navy">{kes.format(detail.tiv_kes)}</dd>
+                          <dd className="mt-0.5 font-semibold text-kenya-navy">{formatMoney.format(detail.tiv_kes)}</dd>
                         </div>
                         <div className="border-b border-kenya-line py-2 pr-2">
                           <dt className="text-[11px] text-kenya-muted">Floor area</dt>

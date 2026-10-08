@@ -1,11 +1,10 @@
 'use client';
 
-const kesM = (m) =>
-  new Intl.NumberFormat('en-KE', { style: 'currency', currency: 'KES', maximumFractionDigits: 1 }).format(
-    (m || 0) * 1e6
-  );
+import { useWorkspaceFormat } from '@/components/WorkspaceFormatProvider';
 
 export default function EventLossTable({ elt, caption }) {
+  const { formatMoneyShort } = useWorkspaceFormat();
+  const fmtM = (m) => formatMoneyShort.format((m || 0) * 1e6);
   const rows = elt || [];
   if (!rows.length) {
     return <p className="py-4 text-center text-xs text-kenya-muted">No event loss table — start the CAT service.</p>;
@@ -29,9 +28,9 @@ export default function EventLossTable({ elt, caption }) {
             <tr key={`${r.tier}-${r.return_period}`} className="border-b border-kenya-line/70">
               <td className="px-3 py-2 font-medium text-kenya-navy">{r.tier}</td>
               <td className="px-3 py-2 tabular-nums">{r.return_period}</td>
-              <td className="px-3 py-2 tabular-nums">{kesM(r.ground_up_loss_m)}</td>
-              <td className="px-3 py-2 tabular-nums font-semibold">{kesM(r.gross_loss_m)}</td>
-              <td className="px-3 py-2 tabular-nums">{kesM(r.net_loss_m)}</td>
+              <td className="px-3 py-2 tabular-nums">{fmtM(r.ground_up_loss_m)}</td>
+              <td className="px-3 py-2 tabular-nums font-semibold">{fmtM(r.gross_loss_m)}</td>
+              <td className="px-3 py-2 tabular-nums">{fmtM(r.net_loss_m)}</td>
             </tr>
           ))}
         </tbody>
