@@ -2,6 +2,8 @@
 
 Casta4 does **not** run your financial CAT engine. It loads portfolio exposure from CSV and displays **your** exceedance curve after upload.
 
+The UI also shows a **hazard landscape** curve derived from the same exposure CSV (TIV × hazard at each map tier). That curve updates with the map; it is **not** a substitute for team financial EP output.
+
 ## Input (dynamic portfolio)
 
 **CSV:** upload on Map → same columns as `docs/sample exposure` (see Settings / exposure schema API).
