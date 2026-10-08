@@ -84,7 +84,7 @@ export default function SignInForm() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-md bg-kenya-coral py-3.5 text-sm font-bold text-white shadow-md ring-2 ring-kenya-coral/30 transition hover:bg-[#a82828] disabled:cursor-not-allowed disabled:opacity-55 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-kenya-blue"
+            className="w-full rounded-full border-2 border-[#9b1c1c] bg-[#c93434] py-3.5 text-sm font-bold text-white shadow-md transition hover:bg-[#a82828] disabled:cursor-not-allowed disabled:opacity-55 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-kenya-blue"
           >
             {loading ? 'Signing in…' : 'Sign in'}
           </button>

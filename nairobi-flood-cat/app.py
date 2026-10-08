@@ -1,7 +1,14 @@
 """
 Nairobi Urban Flood CAT Model — Underwriter Platform (Team A).
 
+<<<<<<< HEAD
 Run:
+=======
+DEV / DEMO ONLY (not used by Casta4 Next.js shell).
+Production API: uvicorn server:app (see README.md).
+
+Run Streamlit locally:
+>>>>>>> 29e4012b82039c8abc69db7bef5298caef5493a3
   pip install -r requirements.txt
   streamlit run app.py
 """

@@ -12,7 +12,19 @@ import { parse } from 'csv-parse/sync';
 import { cleanLlmAnswer } from './lib/clean-llm-answer.js';
 import { formatRetrievalResults } from './lib/rag-retrieval.js';
 import nairobiRouter from './lib/nairobi-routes.js';
-import { loadPortfolio, computePortfolioSummary, computeLossCurve } from './lib/nairobi-flood-cat.js';
+import workspaceRouter from './lib/workspace-routes.js';
+import catRouter from './lib/cat-routes.js';
+import { catEngineHealthy, catModelConfigured, runCatSimulation } from './lib/cat-engine-client.js';
+import { loadPortfolio, computePortfolioSummary, enrichRow } from './lib/nairobi-flood-cat.js';
+import { loadExternalEpCurve } from './lib/ep-curve-model.js';
+import { loadUploadedDocTexts } from './lib/workspace-store.js';
+
+function epLossAtOrAbove(external, minYears) {
+  const curve = external?.ep_curve;
+  if (!curve?.length) return null;
+  const sorted = [...curve].sort((a, b) => a.return_period_years - b.return_period_years);
+  return sorted.find((p) => p.return_period_years >= minYears)?.loss_kes ?? sorted[sorted.length - 1].loss_kes;
+}
 
 const app = express();
 app.set('trust proxy', 1);
@@ -23,7 +35,6 @@ const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 app.use(helmet());
 app.disable('x-powered-by');
 app.use(cors());
-app.use(express.json({ limit: '10kb' }));
 app.use(
   rateLimit({
     windowMs: 60 * 1000,
@@ -33,7 +44,13 @@ app.use(
   })
 );
 
+/** Large CSV uploads — must be registered before the global 10kb JSON parser. */
+app.use('/api/workspace', express.json({ limit: '15mb' }), workspaceRouter);
+
+app.use(express.json({ limit: '10kb' }));
+
 app.use('/api/nairobi', nairobiRouter);
+app.use('/api/cat', catRouter);
 
 let vectorStore;
 
@@ -159,14 +176,29 @@ async function runRag(question) {
   const results = await vectorStore.similaritySearch(question, 6);
   const { context, sources } = formatRetrievalResults(results);
 
-  const prompt = `Retrieved context:\n${context.join('\n\n')}\n\nUser question: ${question}\n\nAnswer:`;
+  const userDocs = await loadUploadedDocTexts();
+  const userBlocks = userDocs.map(
+    (d) => `[User upload: ${d.filename}]\n${d.text.slice(0, 12_000)}`
+  );
+  const mergedContext = [...context, ...userBlocks].slice(0, 12);
+  const mergedSources = [
+    ...sources,
+    ...userDocs.map((d, i) => ({
+      id: `upload-${i}`,
+      file: d.filename,
+      kind: 'upload',
+      excerpt: d.text.slice(0, 120),
+    })),
+  ];
+
+  const prompt = `Retrieved context:\n${mergedContext.join('\n\n')}\n\nUser question: ${question}\n\nAnswer:`;
   const messages = [
     { role: 'system', content: buildSystemPrompt(question) },
     { role: 'user', content: prompt },
   ];
 
   const answer = await callGroq(messages);
-  return { context, sources, answer };
+  return { context: mergedContext, sources: mergedSources, answer };
 }
 
 async function handleRag(req, res) {
@@ -305,20 +337,32 @@ app.get('/api/dashboard', async (_req, res) => {
     // Load flood portfolio
     const { exposure } = await loadPortfolio();
     const summary = computePortfolioSummary(exposure);
-    const lossCurve = computeLossCurve(exposure);
-    const moderateLoss = lossCurve.points.find(p => p.tier === 'moderate');
-    const severeLoss = lossCurve.points.find(p => p.tier === 'severe');
+    const external = await loadExternalEpCurve();
+    let moderate_loss_kes = epLossAtOrAbove(external, 10);
+    let severe_loss_kes = epLossAtOrAbove(external, 50);
 
-    const { enrichRow } = await import('./lib/nairobi-flood-cat.js');
-    const topRisk = exposure
-      .map(row => enrichRow(row, 'moderate'))
+    let cat = null;
+    if (catModelConfigured() && (await catEngineHealthy())) {
+      try {
+        cat = await runCatSimulation();
+        const s100 = cat.summary_100yr;
+        if (s100?.gross_loss_kes != null) {
+          moderate_loss_kes = moderate_loss_kes ?? epLossAtOrAbove({ ep_curve: cat.ep_curve_gross }, 10);
+          severe_loss_kes = severe_loss_kes ?? epLossAtOrAbove({ ep_curve: cat.ep_curve_gross }, 50);
+        }
+      } catch (err) {
+        console.warn('Dashboard CAT simulation skipped:', err.message);
+      }
+    }
+
+    const enriched = await Promise.all(exposure.map((row) => enrichRow(row, 'moderate')));
+    const topRisk = enriched
       .sort((a, b) => b.hazard - a.hazard)
       .slice(0, 3)
-      .map(r => ({
+      .map((r) => ({
         loc_id: r.loc_id,
         housing_label: r.housing_label,
         hazard: r.hazard,
-        loss_kes: r.loss_kes,
         tiv_kes: r.tiv_kes,
       }));
 
@@ -342,8 +386,19 @@ app.get('/api/dashboard', async (_req, res) => {
       flood: {
         location_count: summary.location_count,
         total_tiv_kes: summary.total_tiv_kes,
-        moderate_loss_kes: moderateLoss?.portfolio_loss_kes || 0,
-        severe_loss_kes: severeLoss?.portfolio_loss_kes || 0,
+        moderate_loss_kes,
+        severe_loss_kes,
+        team_ep_loaded: Boolean(external?.ep_curve?.length),
+        cat_engine_loaded: Boolean(cat),
+        cat_use_ai: cat?.use_ai_rectifier ?? null,
+        cat_hotspot_assets: cat?.hotspot_assets ?? null,
+        cat_100yr: cat?.summary_100yr ?? null,
+        cat_100yr_baseline: cat?.summary_100yr_baseline ?? null,
+        cat_100yr_ai: cat?.summary_100yr_ai ?? null,
+        cat_ai_uplift_gross_pct: cat?.ai_uplift_gross_pct ?? null,
+        cat_elt: cat?.elt ?? null,
+        cat_ep_baseline: cat?.ep_curve_baseline_gross ?? null,
+        cat_ep_ai: cat?.ep_curve_ai_gross ?? null,
         top_risk_locations: topRisk,
         by_housing: summary.by_housing,
       },
@@ -361,7 +416,8 @@ Promise.all([loadPortfolio(), loadRAG()])
       console.log(`  POST /rag  — ask.js and CLI (pure RAG)`);
       console.log(`  POST /ask  — Netlify / web alias`);
       console.log(`  GET  /health`);
-      console.log(`  GET  /api/nairobi/* — Nairobi flood CAT desk`);
+      console.log(`  GET  /api/nairobi/* — flood portfolio API`);
+      console.log(`  POST /api/workspace/exposure — CSV (core cols + hazard or hazard_score_moderate)`);
     });
   })
   .catch((err) => {

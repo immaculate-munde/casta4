@@ -52,7 +52,7 @@ export default function ChatDrawerProvider({ children }) {
             className={`absolute flex min-h-0 flex-col overflow-hidden bg-[var(--chat-bg)] shadow-2xl ${
               fullscreen
                 ? 'inset-0'
-                : 'inset-y-0 right-0 h-[100dvh] w-full max-w-none border-l border-[#3c4043] sm:max-w-3xl sm:rounded-l-xl dark:border-[#5f6368]'
+                : 'inset-y-0 right-0 h-[100dvh] w-full max-w-none shadow-2xl sm:max-w-3xl sm:rounded-l-xl'
             }`}
           >
             <ReAgentGeminiChat

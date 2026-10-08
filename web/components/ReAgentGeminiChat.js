@@ -8,6 +8,9 @@ import { askClaims } from '@/lib/api';
 import { pickChatGreeting } from '@/lib/chat-greetings';
 import { enrichQuestionWithProperty } from '@/lib/property-context';
 import { useUserSession } from '@/lib/use-user-session';
+import ChatDocumentUpload from '@/components/ChatDocumentUpload';
+import { IconPanelLeft } from '@/components/NavIcons';
+import { btnBase, btnPrimary, cn } from '@/lib/buttons';
 
 const STORAGE_KEY = 'reagent_chat_sessions_v1';
 
@@ -43,10 +46,9 @@ function SourcePills({ sources }) {
         <li
           key={`${s.file}-${s.id}`}
           title={s.excerpt ? `${s.excerpt}…` : s.file}
-          className="truncate rounded-full border px-2 py-0.5 text-[10px] font-medium"
+          className="truncate rounded-full px-2 py-0.5 text-[10px] font-medium"
           style={{
-            borderColor: 'var(--chat-border)',
-            background: 'var(--chat-panel)',
+            background: 'var(--chat-user-bubble)',
             color: 'var(--chat-text-muted)',
           }}
         >
@@ -57,7 +59,7 @@ function SourcePills({ sources }) {
   );
 }
 
-export default function ReAgentGeminiChat({ onClose, fullscreen, onToggleFullscreen }) {
+export default function ReAgentGeminiChat({ onClose, fullscreen, onToggleFullscreen, embedded = false }) {
   const { propertyContext } = useChatDrawer();
   const { user } = useUserSession();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -71,11 +73,17 @@ export default function ReAgentGeminiChat({ onClose, fullscreen, onToggleFullscr
 
   useEffect(() => {
     const mq = window.matchMedia('(min-width: 1024px)');
-    const syncSidebar = () => setSidebarOpen(mq.matches);
+    const syncSidebar = () => {
+      if (embedded) {
+        setSidebarOpen(mq.matches);
+      } else {
+        setSidebarOpen(mq.matches);
+      }
+    };
     syncSidebar();
     mq.addEventListener('change', syncSidebar);
     return () => mq.removeEventListener('change', syncSidebar);
-  }, []);
+  }, [embedded]);
 
   useEffect(() => {
     const loaded = loadSessions();
@@ -181,26 +189,24 @@ export default function ReAgentGeminiChat({ onClose, fullscreen, onToggleFullscr
       ) : null}
 
       <aside
-        className={`flex shrink-0 flex-col border-r transition-[width,transform] duration-200 max-lg:fixed max-lg:inset-y-0 max-lg:left-0 max-lg:z-[70] max-lg:w-[min(280px,88vw)] max-lg:shadow-2xl ${
+        className={`flex shrink-0 flex-col transition-[width,transform] duration-200 max-lg:fixed max-lg:inset-y-0 max-lg:left-0 max-lg:z-[70] max-lg:w-[min(280px,88vw)] max-lg:shadow-2xl ${
           sidebarOpen ? 'max-lg:translate-x-0' : 'max-lg:pointer-events-none max-lg:-translate-x-full'
         } lg:relative lg:translate-x-0 ${
-          sidebarOpen ? 'lg:w-64' : 'lg:w-0 lg:overflow-hidden lg:border-r-0'
-        }`}
-        style={{ borderColor: 'var(--chat-border)', background: 'var(--chat-sidebar)' }}
+          sidebarOpen ? 'lg:w-64' : 'lg:w-0 lg:overflow-hidden'
+        } ${embedded ? '' : 'border-r'}`}
+        style={{
+          borderColor: embedded ? undefined : 'var(--chat-border)',
+          background: 'var(--chat-sidebar)',
+        }}
       >
-        <div className="flex items-center justify-between px-4 py-4">
+        <div className="flex items-center justify-between px-4 pb-2 pt-4">
           <span className="text-lg font-semibold tracking-tight" style={{ color: 'var(--chat-text)' }}>
             ReAgent
           </span>
         </div>
         <div className="px-3 pb-2">
-          <button
-            type="button"
-            onClick={handleNewChat}
-            className="flex w-full items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-medium hover:opacity-90"
-            style={{ borderColor: 'var(--chat-border)', color: 'var(--chat-text)' }}
-          >
-            <span className="text-lg leading-none">+</span> New chat
+          <button type="button" onClick={handleNewChat} className={cn(btnPrimary, 'w-full py-2.5 text-sm normal-case')}>
+            <span className="text-base leading-none">+</span> New chat
           </button>
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto px-2">
@@ -233,68 +239,71 @@ export default function ReAgentGeminiChat({ onClose, fullscreen, onToggleFullscr
             ))}
           </ul>
         </div>
-        <p
-          className="border-t px-4 py-3 text-[11px]"
-          style={{ borderColor: 'var(--chat-border)', color: 'var(--chat-text-muted)' }}
-        >
-          Grounded on ingested policy, treaty & claim docs
+        <ChatDocumentUpload />
+        <p className="px-4 pb-4 pt-1 text-[11px] leading-snug" style={{ color: 'var(--chat-text-muted)' }}>
+          Answers use policy, treaty & claim docs plus your uploads.
         </p>
       </aside>
 
       <div className="flex min-h-0 w-full min-w-0 flex-1 flex-col">
-        <header
-          className="z-20 flex shrink-0 items-center gap-2 border-b px-2 py-2 sm:px-3"
-          style={{
-            borderColor: 'var(--chat-border)',
-            background: 'var(--chat-panel)',
-          }}
-        >
-          <button
-            type="button"
-            onClick={() => setSidebarOpen((v) => !v)}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg hover:opacity-80"
-            style={{ color: 'var(--chat-text)' }}
-            aria-label={sidebarOpen ? 'Close sidebar' : 'Open sidebar'}
+        {!embedded ? (
+          <header
+            className="z-20 flex shrink-0 items-center gap-2 border-b bg-[var(--chat-panel)] px-3 py-2.5 sm:px-4"
+            style={{ borderColor: 'var(--chat-border)' }}
           >
-            ☰
-          </button>
-          <p
-            className="min-w-0 flex-1 truncate text-sm font-semibold sm:text-base"
-            style={{ color: 'var(--chat-text)' }}
-          >
-            {active?.title || 'ReAgent'}
-          </p>
-          <div
-            className="flex shrink-0 items-center gap-1 rounded-lg border p-0.5 sm:gap-1.5 sm:p-1"
-            style={{ borderColor: 'var(--chat-border)', background: 'var(--chat-bg)' }}
-          >
-            <ThemeToggle className="!border-0 !bg-transparent !px-2 !py-1.5 dark:!bg-transparent" />
             <button
               type="button"
-              onClick={onToggleFullscreen}
-              className="hidden h-9 items-center justify-center rounded-md px-2 text-sm font-medium hover:opacity-80 sm:flex"
-              style={{ color: 'var(--chat-text)' }}
-              aria-label={fullscreen ? 'Exit full screen' : 'Full screen'}
-              title={fullscreen ? 'Exit full screen' : 'Full screen'}
+              onClick={() => setSidebarOpen((v) => !v)}
+              className={cn(btnBase, 'gap-2 !px-3 !py-2 normal-case')}
+              aria-label={sidebarOpen ? 'Close sidebar' : 'Open sidebar'}
             >
-              {fullscreen ? 'Exit full' : 'Full screen'}
+              <IconPanelLeft className="h-5 w-5 shrink-0" />
+              <span className="text-xs font-bold">{sidebarOpen ? 'Hide history' : 'Show history'}</span>
             </button>
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex h-8 items-center justify-center rounded-md px-2 text-sm font-semibold hover:opacity-80 sm:h-9 sm:px-3"
+            <p
+              className="min-w-0 flex-1 truncate text-sm font-semibold sm:text-base"
               style={{ color: 'var(--chat-text)' }}
             >
-              Close
-            </button>
-          </div>
-        </header>
+              {active?.title || 'ReAgent'}
+            </p>
+            <div className="flex shrink-0 items-center gap-1.5">
+              <ThemeToggle />
+              {onToggleFullscreen ? (
+                <button
+                  type="button"
+                  onClick={onToggleFullscreen}
+                  className={cn(btnBase, 'hidden sm:inline-flex')}
+                  aria-label={fullscreen ? 'Exit full screen' : 'Full screen'}
+                  title={fullscreen ? 'Exit full screen' : 'Full screen'}
+                >
+                  {fullscreen ? 'Exit full' : 'Full screen'}
+                </button>
+              ) : null}
+              {onClose ? (
+                <button type="button" onClick={onClose} className={btnBase}>
+                  Close
+                </button>
+              ) : null}
+            </div>
+          </header>
+        ) : null}
 
         <div
           className={`relative min-h-0 flex-1 ${
             hasThread ? 'overflow-y-auto overscroll-contain px-3 py-4 sm:px-4' : 'flex items-center justify-center overflow-hidden'
-          }`}
+          } ${embedded ? 'pt-2 lg:pt-3' : ''}`}
         >
+          {embedded && !sidebarOpen ? (
+            <button
+              type="button"
+              onClick={() => setSidebarOpen(true)}
+              className={cn(btnBase, 'absolute left-3 top-3 z-10 lg:hidden')}
+              aria-label="Open chat history"
+            >
+              <IconPanelLeft className="h-4 w-4" />
+              Chats
+            </button>
+          ) : null}
           {!hasThread ? (
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[#dbe7f7] via-[var(--chat-bg)] to-[var(--chat-bg)] opacity-95 dark:from-[#1a2744] dark:via-[var(--chat-bg)] dark:opacity-90" />
           ) : null}
@@ -337,18 +346,14 @@ export default function ReAgentGeminiChat({ onClose, fullscreen, onToggleFullscr
 
         <form
           onSubmit={onSubmit}
-          className="shrink-0 border-t px-3 pb-4 pt-3 sm:px-4 sm:pb-5"
-          style={{
-            borderColor: 'var(--chat-border)',
-            background: 'var(--chat-bg)',
-          }}
+          className="shrink-0 px-3 pb-4 pt-2 sm:px-4 sm:pb-5"
+          style={{ background: 'var(--chat-bg)' }}
         >
           {propertyContext?.loc_id ? (
             <p
-              className="mx-auto mb-2 max-w-3xl rounded-md border px-3 py-2 text-[11px] font-medium"
+              className="mx-auto mb-2 max-w-3xl rounded-lg px-3 py-2 text-[11px] font-medium"
               style={{
-                borderColor: 'var(--chat-border)',
-                background: 'var(--chat-panel)',
+                background: 'var(--chat-user-bubble)',
                 color: 'var(--chat-text-muted)',
               }}
             >
@@ -360,7 +365,7 @@ export default function ReAgentGeminiChat({ onClose, fullscreen, onToggleFullscr
             </p>
           ) : null}
           <div
-            className="mx-auto flex w-full max-w-3xl items-end gap-2 rounded-2xl border-2 px-3 py-2.5 shadow-lg focus-within:ring-2 focus-within:ring-kenya-blue/40 sm:rounded-3xl sm:px-4 sm:py-3"
+            className="mx-auto flex w-full max-w-3xl items-end gap-2 rounded-2xl border px-3 py-2 shadow-md focus-within:ring-2 focus-within:ring-kenya-blue/35 sm:rounded-3xl sm:px-4 sm:py-2.5"
             style={{ borderColor: 'var(--chat-border)', background: 'var(--chat-panel)' }}
           >
             <textarea
@@ -381,7 +386,7 @@ export default function ReAgentGeminiChat({ onClose, fullscreen, onToggleFullscr
             <button
               type="submit"
               disabled={loading || !input.trim()}
-              className="shrink-0 rounded-full bg-kenya-blue px-4 py-1.5 text-sm font-bold text-white disabled:opacity-50 dark:bg-[#aecbfa] dark:text-[#0b1a2e]"
+              className={cn(btnPrimary, 'shrink-0 !px-5 !py-2 text-sm normal-case')}
             >
               Send
             </button>

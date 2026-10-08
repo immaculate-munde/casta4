@@ -15,7 +15,7 @@ export default function ClaimsChat() {
           ← Home
         </Link>
         <span className="text-sm font-semibold text-kenya-navy">ReAgent AI · Underwriter chat</span>
-        <Link href="/catastrophe" className="text-sm font-semibold text-kenya-blue hover:underline">
+        <Link href="/map" className="text-sm font-semibold text-kenya-blue hover:underline">
           Flood desk
         </Link>
       </header>

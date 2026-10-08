@@ -7,9 +7,11 @@ import { useChatDrawer } from '@/components/ChatDrawerProvider';
 /** Floating hover bot on all app pages — opens chat drawer (not a separate route). */
 export default function GlobalBotFab() {
   const pathname = usePathname();
-  const { openChat } = useChatDrawer();
+  const { openChat, open: chatDrawerOpen } = useChatDrawer();
 
   if (pathname === '/signin') return null;
+  if (pathname === '/chat' || pathname.startsWith('/chat/')) return null;
+  if (chatDrawerOpen) return null;
 
   return <ReAgentBotLauncher onActivate={openChat} />;
 }

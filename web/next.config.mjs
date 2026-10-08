@@ -24,6 +24,10 @@ const nextConfig = {
         destination: `${ragServer}/api/dashboard`,
       },
       {
+        source: '/api/workspace/:path*',
+        destination: `${ragServer}/api/workspace/:path*`,
+      },
+      {
         source: '/api/rag/:path*',
         destination: `${ragServer}/:path*`,
       },
