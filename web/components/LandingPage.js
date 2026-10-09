@@ -7,7 +7,7 @@ import { btnPrimary, btnSecondary } from '@/lib/buttons';
 const CAPABILITIES = [
   {
     title: 'Flood risk & exposure',
-    body: 'Nairobi flood book on the map — hazard scenarios, location-level loss context, and portfolio exceedance curves for pricing and accumulation.',
+    body: 'Regional exposure on the map — hazard scenarios, location-level loss context, and portfolio exceedance curves for pricing and accumulation.',
   },
   {
     title: 'Claims & operations',
@@ -27,7 +27,7 @@ export default function LandingPage() {
           <div className="flex min-w-0 items-center gap-2.5">
             <span className="h-[22px] w-2.5 shrink-0 bg-kenya-coral" aria-hidden />
             <span className="font-serif text-xl font-semibold text-kenya-navy sm:text-2xl">Kenya Re</span>
-            <span className="truncate text-sm font-medium text-kenya-muted">Casta4 workspace</span>
+            <span className="truncate text-sm font-medium text-kenya-muted">ReAgent workspace</span>
           </div>
           <div className="flex shrink-0 items-center gap-3">
             <ThemeToggle />
@@ -45,9 +45,10 @@ export default function LandingPage() {
             Better financial decisions on flood risk and claims
           </h1>
           <p className="mt-5 text-base leading-relaxed text-kenya-muted md:text-lg">
-            Casta4 helps underwriters and reinsurance analysts judge{' '}
-            <strong className="font-semibold text-kenya-navy">Nairobi urban flood</strong> exposure, modelled losses,
-            and claims context in one Kenya Re workspace — from the map and EP curve through operations dashboards.
+            ReAgent helps underwriters and reinsurance analysts judge{' '}
+            <strong className="font-semibold text-kenya-navy">urban flood</strong> exposure, modelled losses, and claims
+            context in one Kenya Re workspace — upload a regional CSV on the map and follow it through EP curve and
+            operations.
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
             <Link

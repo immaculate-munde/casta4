@@ -4,9 +4,9 @@ import GlobalBotFab from '@/components/GlobalBotFab';
 import ThemeProvider from '@/components/ThemeProvider';
 
 export const metadata = {
-  title: 'Kenya Re — Casta4',
+  title: 'Kenya Re — ReAgent',
   description:
-    'Kenya Re Casta4 — Nairobi flood catastrophe modelling and underwriter decision support for risk and claims',
+    'Kenya Re ReAgent — catastrophe modelling and underwriter decision support for flood risk and claims',
 };
 
 export const viewport = {

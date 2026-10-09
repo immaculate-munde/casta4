@@ -4,19 +4,24 @@ import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useWorkspaceFormat } from '@/components/WorkspaceFormatProvider';
 import { fetchRagJson } from '@/lib/api';
+import { btnSecondary, btnSm, cn } from '@/lib/buttons';
 
-function WaterfallBar({ label, value, max, tone = 'blue' }) {
+const panel = 'rounded-sm border border-kenya-line bg-kenya-panel shadow-sm';
+const kicker = 'text-[10px] font-bold uppercase tracking-wider text-kenya-ink/70 dark:text-kenya-muted';
+const tableHead =
+  'border-b border-kenya-line bg-kenya-surface text-left text-[10px] font-bold uppercase tracking-wide text-kenya-muted dark:bg-[#25282c]';
+
+function WaterfallBar({ value, max, tone = 'gul' }) {
   const w = max > 0 ? Math.max(2, (value / max) * 100) : 0;
   const fill =
-    tone === 'deduct' ? 'bg-[#c4a15a]' : tone === 'insured' ? 'bg-[#3d8bfd]' : 'bg-[#5b9cf5]';
+    tone === 'deduct'
+      ? 'bg-kenya-watch'
+      : tone === 'insured'
+        ? 'bg-kenya-navy dark:bg-[#1a4a8a]'
+        : 'bg-kenya-blue';
   return (
-    <div className="space-y-1">
-      <div className="flex items-baseline justify-between gap-2 text-[11px]">
-        <span className="font-medium text-[#e8eaed]/90">{label}</span>
-      </div>
-      <div className="h-7 w-full rounded-sm bg-[#1a1d21]">
-        <div className={`h-full rounded-sm transition-all ${fill}`} style={{ width: `${w}%` }} />
-      </div>
+    <div className="h-6 w-full bg-kenya-line">
+      <div className={`h-full transition-all ${fill}`} style={{ width: `${w}%` }} />
     </div>
   );
 }
@@ -24,7 +29,7 @@ function WaterfallBar({ label, value, max, tone = 'blue' }) {
 function OpsLossCurve({ points, bandLow, bandHigh, formatLoss, highlightRp }) {
   const pts = points ?? [];
   if (!pts.length) {
-    return <p className="py-8 text-center text-xs text-[#9aa0a6]">No annual curve — start CAT engine</p>;
+    return <p className="py-8 text-center text-xs text-kenya-muted">No annual curve — start the CAT service.</p>;
   }
   const width = 640;
   const height = 160;
@@ -53,19 +58,24 @@ function OpsLossCurve({ points, bandLow, bandHigh, formatLoss, highlightRp }) {
       : null;
 
   return (
-    <svg viewBox={`0 0 ${width} ${height}`} className="w-full text-[#5b9cf5]" role="img">
-      {bandPath ? <path d={bandPath} className="fill-[#5b9cf5]/20 stroke-none" /> : null}
-      <path d={linePath} fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinejoin="round" />
+    <svg viewBox={`0 0 ${width} ${height}`} className="w-full text-kenya-blue" role="img">
+      {bandPath ? <path d={bandPath} className="fill-kenya-blue/15 stroke-none dark:fill-kenya-blue/25" /> : null}
+      <path d={linePath} fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
       {pts.map((p, i) => {
         const active = p.return_period_years === highlightRp;
         return (
           <g key={p.return_period_years}>
-            <circle cx={xAt(i)} cy={yAt(p.loss_kes)} r={active ? 5 : 3.5} className="fill-[#3d8bfd]" />
+            <circle
+              cx={xAt(i)}
+              cy={yAt(p.loss_kes)}
+              r={active ? 5 : 3.5}
+              className={active ? 'fill-kenya-coral stroke-kenya-panel stroke-[2]' : 'fill-kenya-blue'}
+            />
             <text
               x={xAt(i)}
               y={height - 8}
               textAnchor="middle"
-              className="fill-[#9aa0a6] text-[9px]"
+              className="fill-kenya-muted text-[9px] font-medium"
               style={{ fontFamily: 'var(--font-sans, Public Sans, sans-serif)' }}
             >
               {p.return_period_years}y
@@ -75,7 +85,7 @@ function OpsLossCurve({ points, bandLow, bandHigh, formatLoss, highlightRp }) {
                 x={xAt(i)}
                 y={yAt(p.loss_kes) - 8}
                 textAnchor="middle"
-                className="fill-[#fbbc04] text-[9px] font-semibold"
+                className="fill-kenya-navy text-[9px] font-semibold dark:fill-[#e8eaed]"
               >
                 {formatLoss(p.loss_kes)}
               </text>
@@ -107,7 +117,7 @@ function exportLossesCsv(locationLosses, regionId) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `casta4-losses-${regionId || 'portfolio'}.csv`;
+  a.download = `reagent-losses-${regionId || 'portfolio'}.csv`;
   a.click();
   URL.revokeObjectURL(url);
 }
@@ -142,10 +152,14 @@ export default function OperationsFinancialDesk() {
 
   useEffect(() => {
     const onExposure = () => load();
+    window.addEventListener('reagent:exposure-changed', onExposure);
     window.addEventListener('casta4:exposure-changed', onExposure);
+    window.addEventListener('casta4-workspace-updated', onExposure);
     window.addEventListener('focus', onExposure);
     return () => {
+      window.removeEventListener('reagent:exposure-changed', onExposure);
       window.removeEventListener('casta4:exposure-changed', onExposure);
+      window.removeEventListener('casta4-workspace-updated', onExposure);
       window.removeEventListener('focus', onExposure);
     };
   }, [load]);
@@ -166,23 +180,22 @@ export default function OperationsFinancialDesk() {
 
   if (loading && !ops) {
     return (
-      <section className="mb-6 rounded-lg border border-[#3c4043] bg-[#202124] p-6 text-sm text-[#9aa0a6]">
-        Running portfolio financial engine on active map book…
+      <section className={`mb-6 ${panel} p-5 text-sm text-kenya-muted`}>
+        Running portfolio financial engine on the active map book…
       </section>
     );
   }
 
   if (error && !ops) {
     return (
-      <section className="mb-6 rounded-lg border border-[#5f2120] bg-[#202124] p-6 text-sm text-[#f28b82]">
+      <section className="mb-6 rounded-sm border border-[#f0c0c0] bg-[#fdeaea] px-4 py-3 text-sm text-[#8a1f1f] dark:border-[#5f2120] dark:bg-[#3d2020] dark:text-[#f28b82]">
         {payload?.error || error}
-        <p className="mt-2 text-xs text-[#9aa0a6]">
+        <p className="mt-2 text-xs opacity-90">
           Upload or switch a regional CSV on the{' '}
-          <Link href="/map" className="text-[#8ab4f8] hover:underline">
-            map
+          <Link href="/map" className="font-semibold text-kenya-blue hover:underline dark:text-[#8ab4f8]">
+            flood desk
           </Link>
-          , then ensure CAT is running (<code className="text-[11px]">uvicorn server:app</code> in{' '}
-          <code className="text-[11px]">nairobi-flood-cat</code>).
+          , and start the portfolio CAT service (<code className="font-mono text-[11px]">uvicorn server:app</code>).
         </p>
       </section>
     );
@@ -191,95 +204,99 @@ export default function OperationsFinancialDesk() {
   if (!ops) return null;
 
   return (
-    <section className="mb-8 overflow-hidden rounded-lg border border-[#3c4043] bg-[#202124] text-[#e8eaed] shadow-lg">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#3c4043] px-4 py-3">
+    <section className="mb-8 space-y-4">
+      <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-[#fbbc04]">Financial operations</p>
-          <h2 className="font-serif text-xl font-semibold text-white">
-            {payload?.region_label || 'Portfolio'} · {payload?.portfolio_count ?? ops?.waterfall?.buildings_total}{' '}
-            buildings
+          <div className="mb-1 flex items-center gap-2">
+            <span className="inline-block h-4 w-1.5 shrink-0 bg-kenya-coral" aria-hidden />
+            <p className={kicker}>ReAgent · portfolio financial engine</p>
+          </div>
+          <h2 className="font-serif text-xl font-semibold text-kenya-navy">
+            {payload?.region_label || 'Portfolio'} · {payload?.portfolio_count ?? wf?.buildings_total} buildings
           </h2>
-          <p className="text-[11px] text-[#9aa0a6]">
-            Scenario view (tier sum) · insurer gross only · synthetic exposure &amp; proxy hazard
+          <p className="mt-1 text-xs text-kenya-muted">
+            Active map book ({payload?.exposure_source === 'active_workspace_csv' ? 'uploaded CSV' : 'workspace'}) ·
+            scenario tier sum · insurer gross
+            {payload?.zone_mode === 'portfolio_sectors' ? ' · zones from map sectors (non-Nairobi book)' : null}
+            {payload?.zone_mode === 'nairobi_hotspots' ? ' · zones from drainage hotspots' : null}
+            {payload?.zone_mode === 'csv_column' ? ' · zones from CSV column' : null}
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-2 text-[10px] text-[#9aa0a6]">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-kenya-muted">
           <span>Deductible {formatPct.format(settings?.deductible_pct ?? ops.deductible_pct ?? 0.05)}</span>
-          <span className="text-[#5f6368]">·</span>
+          <span aria-hidden>·</span>
           <span>Limit 100%</span>
-          <span className="text-[#5f6368]">·</span>
+          <span aria-hidden>·</span>
           <span>Tier pairing: by footprint</span>
-          <span className="text-[#5f6368]">·</span>
+          <span aria-hidden>·</span>
           <span>Drainage fix: {payload?.use_ai_rectifier ? 'on' : 'off'}</span>
-          <Link href="/settings" className="ml-1 font-semibold text-[#8ab4f8] hover:underline">
+          <Link href="/settings" className="font-semibold text-kenya-blue hover:underline dark:text-[#8ab4f8]">
             Settings
           </Link>
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2 border-b border-[#3c4043] px-4 py-2">
-        <span className="text-[10px] font-bold uppercase tracking-wider text-[#9aa0a6]">Return period</span>
+      <div className={`flex flex-wrap items-center gap-2 ${panel} px-4 py-3`}>
+        <span className={kicker}>Return period</span>
         {chips.map((rp) => (
           <button
             key={rp}
             type="button"
             onClick={() => setReturnPeriod(rp)}
-            className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
+            className={cn(
+              'rounded-full border-2 px-3 py-1 text-xs font-bold transition',
               returnPeriod === rp
-                ? 'bg-[#1a73e8] text-white'
-                : 'bg-[#303134] text-[#e8eaed] hover:bg-[#3c4043]'
-            }`}
+                ? 'border-kenya-navy bg-kenya-navy !text-white dark:border-[#1a4a8a] dark:bg-[#1a4a8a]'
+                : 'border-kenya-line bg-kenya-surface !text-kenya-navy hover:bg-[#eef1f5] dark:border-[#dadce0] dark:bg-[#1a1d21] dark:!text-[#f1f3f4] dark:hover:bg-[#2d3135]'
+            )}
           >
             1 in {rp}
           </button>
         ))}
         {ops.engine_tier_return_period_years !== returnPeriod ? (
-          <span className="text-[10px] text-[#9aa0a6]">
+          <span className="text-[11px] text-kenya-muted">
             Engine tier: 1 in {ops.engine_tier_return_period_years} ({ops.tier_name})
           </span>
         ) : null}
+        {loading ? <span className="text-[10px] text-kenya-muted">Refreshing…</span> : null}
       </div>
 
-      <div className="grid gap-4 p-4 lg:grid-cols-12">
+      <div className="grid gap-4 lg:grid-cols-12">
         <div className="space-y-4 lg:col-span-5">
-          <div className="rounded-md border border-[#3c4043] bg-[#292a2d] p-4">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-[#fbbc04]">
-              From damage to insured loss (1 in {returnPeriod} scenario)
-            </p>
+          <div className={`${panel} border-l-4 border-l-kenya-blue p-4`}>
+            <p className={kicker}>From damage to insured loss (1 in {returnPeriod})</p>
             <div className="mt-3 space-y-3">
               <div>
-                <div className="flex justify-between text-xs">
+                <div className="flex justify-between text-xs text-kenya-ink">
                   <span>Ground up loss</span>
-                  <span className="font-semibold tabular-nums">{formatMoneyCompact.format(wf.ground_up_loss_kes)}</span>
+                  <span className="font-semibold tabular-nums text-kenya-navy">{formatMoneyCompact.format(wf.ground_up_loss_kes)}</span>
                 </div>
-                <WaterfallBar label="" value={wf.ground_up_loss_kes} max={waterfallMax} tone="gul" />
+                <WaterfallBar value={wf.ground_up_loss_kes} max={waterfallMax} tone="gul" />
               </div>
               <div>
-                <div className="flex justify-between text-xs">
+                <div className="flex justify-between text-xs text-kenya-ink">
                   <span>Less deductible</span>
-                  <span className="font-semibold tabular-nums">{formatMoneyCompact.format(wf.deductible_kes)}</span>
+                  <span className="font-semibold tabular-nums text-kenya-navy">{formatMoneyCompact.format(wf.deductible_kes)}</span>
                 </div>
-                <WaterfallBar label="" value={wf.deductible_kes} max={waterfallMax} tone="deduct" />
+                <WaterfallBar value={wf.deductible_kes} max={waterfallMax} tone="deduct" />
               </div>
               <div>
-                <div className="flex justify-between text-xs">
+                <div className="flex justify-between text-xs text-kenya-ink">
                   <span>Insured loss</span>
-                  <span className="font-semibold tabular-nums">{formatMoneyCompact.format(wf.insured_loss_kes)}</span>
+                  <span className="font-semibold tabular-nums text-kenya-navy">{formatMoneyCompact.format(wf.insured_loss_kes)}</span>
                 </div>
-                <WaterfallBar label="" value={wf.insured_loss_kes} max={waterfallMax} tone="insured" />
+                <WaterfallBar value={wf.insured_loss_kes} max={waterfallMax} tone="insured" />
               </div>
             </div>
-            <p className="mt-3 text-[11px] text-[#9aa0a6]">
+            <p className="mt-3 text-xs text-kenya-muted">
               {formatPct.format(wf.pct_of_tiv)} of insured value · {wf.buildings_with_loss} of {wf.buildings_total}{' '}
               buildings reached
             </p>
           </div>
 
-          <div className="rounded-md border border-[#3c4043] bg-[#292a2d] p-4">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-[#fbbc04]">
-              Indicative premium aid (assumed)
-            </p>
-            <p className="mt-1 text-[11px] text-[#9aa0a6]">
+          <div className={`${panel} border-l-4 border-l-kenya-coral p-4`}>
+            <p className={kicker}>Indicative premium aid (assumed)</p>
+            <p className="mt-1 text-xs text-kenya-muted">
               Average annual loss {formatMoneyCompact.format(prem.aal_kes)} · risk load share
             </p>
             <input
@@ -289,51 +306,49 @@ export default function OperationsFinancialDesk() {
               step={1}
               value={riskLoadPct}
               onChange={(e) => setRiskLoadPct(Number(e.target.value))}
-              className="mt-2 w-full accent-[#1a73e8]"
+              className="mt-2 w-full accent-kenya-navy"
             />
-            <p className="text-[11px] text-[#9aa0a6]">{riskLoadPct}% load</p>
-            <div className="mt-2 font-serif text-3xl font-semibold text-white">
-              {formatMoneyCompact.format(indicativePremium)}
-            </div>
-            <p className="mt-1 text-[11px] text-[#9aa0a6]">
+            <p className="text-xs text-kenya-muted">{riskLoadPct}% load</p>
+            <div className="mt-2 font-serif text-3xl font-semibold text-kenya-navy">{formatMoneyCompact.format(indicativePremium)}</div>
+            <p className="mt-1 text-xs text-kenya-muted">
               About {formatPct.format(indicativePctOfTiv)} of insured value. Indicative, not a quote.
             </p>
           </div>
         </div>
 
-        <div className="lg:col-span-7">
-          <div className="rounded-md border border-[#3c4043] bg-[#292a2d] p-4">
-            <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-[#fbbc04]">
-                Loss curve (annual view, simulated)
+        <div className={`lg:col-span-7 ${panel} p-4`}>
+          <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
+            <p className={kicker}>Loss curve (annual view, simulated)</p>
+            {ops.annual_curve?.gross_at_selected_rp_kes != null ? (
+              <p className="text-[10px] text-kenya-muted">
+                ELT 1-in-{ops.engine_tier_return_period_years}:{' '}
+                {formatMoneyCompact.format(ops.annual_curve.gross_at_selected_rp_kes)} · scenario{' '}
+                {formatMoneyCompact.format(wf.insured_loss_kes)}
               </p>
-              {ops.annual_curve?.gross_at_selected_rp_kes != null ? (
-                <p className="text-[10px] text-[#9aa0a6]">
-                  ELT at 1 in {ops.engine_tier_return_period_years}:{' '}
-                  {formatMoneyCompact.format(ops.annual_curve.gross_at_selected_rp_kes)} gross · scenario waterfall{' '}
-                  {formatMoneyCompact.format(wf.insured_loss_kes)} — quote one view on slides
-                </p>
-              ) : null}
-            </div>
-            <OpsLossCurve
-              points={ops.annual_curve?.points}
-              bandLow={ops.annual_curve?.band_low}
-              bandHigh={ops.annual_curve?.band_high}
-              formatLoss={(v) => formatMoneyCompact.format(v)}
-              highlightRp={ops.engine_tier_return_period_years}
-            />
+            ) : null}
           </div>
+          <OpsLossCurve
+            points={ops.annual_curve?.points}
+            bandLow={ops.annual_curve?.band_low}
+            bandHigh={ops.annual_curve?.band_high}
+            formatLoss={(v) => formatMoneyCompact.format(v)}
+            highlightRp={ops.engine_tier_return_period_years}
+          />
+          <p className="mt-2 text-[11px] text-kenya-muted">
+            Uncertainty band from baseline vs AI rectifier when both are available.{' '}
+            <Link href="/ep-curve" className="font-semibold text-kenya-blue hover:underline">
+              Full EP desk →
+            </Link>
+          </p>
         </div>
       </div>
 
-      <div className="grid gap-4 border-t border-[#3c4043] p-4 lg:grid-cols-2">
-        <div className="overflow-x-auto rounded-md border border-[#3c4043]">
-          <p className="border-b border-[#3c4043] bg-[#292a2d] px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-[#fbbc04]">
-            By construction class (1 in {returnPeriod})
-          </p>
-          <table className="w-full min-w-[320px] text-left text-xs">
+      <div className="grid gap-4 lg:grid-cols-2">
+        <div className="overflow-x-auto border border-kenya-line bg-kenya-panel shadow-sm">
+          <p className={`border-b border-kenya-line px-3 py-2 ${kicker}`}>By construction class (1 in {returnPeriod})</p>
+          <table className="w-full min-w-[320px] border-collapse text-left text-xs">
             <thead>
-              <tr className="border-b border-[#3c4043] text-[10px] uppercase text-[#9aa0a6]">
+              <tr className={tableHead}>
                 <th className="px-3 py-2">Class</th>
                 <th className="px-3 py-2 text-right">Value share</th>
                 <th className="px-3 py-2 text-right">Loss share</th>
@@ -342,8 +357,8 @@ export default function OperationsFinancialDesk() {
             </thead>
             <tbody>
               {ops.by_construction_class.map((row) => (
-                <tr key={row.class_label} className="border-b border-[#3c4043]/80 last:border-0">
-                  <td className="px-3 py-2">{row.class_label}</td>
+                <tr key={row.class_label} className="border-b border-kenya-line/70 last:border-0">
+                  <td className="px-3 py-2 font-medium text-kenya-navy">{row.class_label}</td>
                   <td className="px-3 py-2 text-right tabular-nums">{formatPct.format(row.value_share)}</td>
                   <td className="px-3 py-2 text-right tabular-nums">{formatPct.format(row.loss_share)}</td>
                   <td className="px-3 py-2 text-right tabular-nums">{formatPct.format(row.loss_pct_of_value)}</td>
@@ -353,13 +368,11 @@ export default function OperationsFinancialDesk() {
           </table>
         </div>
 
-        <div className="overflow-x-auto rounded-md border border-[#3c4043]">
-          <p className="border-b border-[#3c4043] bg-[#292a2d] px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-[#fbbc04]">
-            Where the loss piles up (1 in {returnPeriod})
-          </p>
-          <table className="w-full min-w-[320px] text-left text-xs">
+        <div className="overflow-x-auto border border-kenya-line bg-kenya-panel shadow-sm">
+          <p className={`border-b border-kenya-line px-3 py-2 ${kicker}`}>Where the loss piles up (1 in {returnPeriod})</p>
+          <table className="w-full min-w-[320px] border-collapse text-left text-xs">
             <thead>
-              <tr className="border-b border-[#3c4043] text-[10px] uppercase text-[#9aa0a6]">
+              <tr className={tableHead}>
                 <th className="px-3 py-2">Zone</th>
                 <th className="px-3 py-2 text-right">Loss</th>
                 <th className="px-3 py-2 text-right">Share of loss</th>
@@ -368,9 +381,9 @@ export default function OperationsFinancialDesk() {
             </thead>
             <tbody>
               {ops.by_zone.slice(0, 8).map((row) => (
-                <tr key={row.zone} className="border-b border-[#3c4043]/80 last:border-0">
+                <tr key={row.zone} className="border-b border-kenya-line/70 last:border-0">
                   <td className="px-3 py-2">{row.zone}</td>
-                  <td className="px-3 py-2 text-right tabular-nums">{formatMoneyCompact.format(row.loss_kes)}</td>
+                  <td className="px-3 py-2 text-right tabular-nums font-semibold">{formatMoneyCompact.format(row.loss_kes)}</td>
                   <td className="px-3 py-2 text-right tabular-nums">{formatPct.format(row.loss_share)}</td>
                   <td className="px-3 py-2 text-right tabular-nums">{formatPct.format(row.loss_pct_of_zone_value)}</td>
                 </tr>
@@ -380,17 +393,15 @@ export default function OperationsFinancialDesk() {
         </div>
       </div>
 
-      <div className="border-t border-[#3c4043] p-4">
-        <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-[#fbbc04]">
-          Largest single risks (1 in {returnPeriod})
+      <div className={`${panel} p-4`}>
+        <p className={kicker}>Largest single risks (1 in {returnPeriod})</p>
+        <p className="mb-3 text-xs text-kenya-muted">
+          The ten largest buildings carry {formatPct.format(ops.top_risks.share_of_scenario_loss)} of this scenario loss.
         </p>
-        <p className="mb-3 text-[11px] text-[#9aa0a6]">
-          The ten largest buildings carry {formatPct.format(ops.top_risks.share_of_scenario_loss)} of this loss.
-        </p>
-        <div className="overflow-x-auto rounded-md border border-[#3c4043]">
-          <table className="w-full min-w-[480px] text-left text-xs">
+        <div className="overflow-x-auto border border-kenya-line">
+          <table className="w-full min-w-[480px] border-collapse text-left text-xs">
             <thead>
-              <tr className="border-b border-[#3c4043] bg-[#292a2d] text-[10px] uppercase text-[#9aa0a6]">
+              <tr className={tableHead}>
                 <th className="px-3 py-2">Building</th>
                 <th className="px-3 py-2">Zone</th>
                 <th className="px-3 py-2 text-right">Value</th>
@@ -400,12 +411,14 @@ export default function OperationsFinancialDesk() {
             </thead>
             <tbody>
               {ops.top_risks.rows.map((row) => (
-                <tr key={row.loc_id} className="border-b border-[#3c4043]/80 last:border-0">
-                  <td className="px-3 py-2 font-mono">{row.loc_id}</td>
+                <tr key={row.loc_id} className="border-b border-kenya-line/70 last:border-0">
+                  <td className="px-3 py-2 font-mono text-[11px]">{row.loc_id}</td>
                   <td className="px-3 py-2">{row.zone}</td>
                   <td className="px-3 py-2 text-right tabular-nums">{formatMoneyCompact.format(row.value_kes)}</td>
                   <td className="px-3 py-2 text-right tabular-nums">{formatPct.format(row.damage_pct)}</td>
-                  <td className="px-3 py-2 text-right tabular-nums">{formatMoneyCompact.format(row.insured_loss_kes)}</td>
+                  <td className="px-3 py-2 text-right tabular-nums font-semibold text-kenya-navy">
+                    {formatMoneyCompact.format(row.insured_loss_kes)}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -413,41 +426,36 @@ export default function OperationsFinancialDesk() {
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3 border-t border-[#3c4043] px-4 py-3">
-        <button
-          type="button"
-          className="rounded-full border border-[#5f6368] px-4 py-1.5 text-xs font-semibold text-[#e8eaed] hover:bg-[#303134]"
-          onClick={() => setTraceOpen((v) => !v)}
-        >
+      <div className="flex flex-wrap items-center gap-2">
+        <button type="button" className={cn(btnSecondary, btnSm)} onClick={() => setTraceOpen((v) => !v)}>
           Why this number
         </button>
         <button
           type="button"
-          className="rounded-full border border-[#5f6368] px-4 py-1.5 text-xs font-semibold text-[#e8eaed] hover:bg-[#303134]"
+          className={cn(btnSecondary, btnSm)}
           onClick={() => exportLossesCsv(ops.location_losses, payload?.region_id)}
         >
           Export CSV
         </button>
-        <button
-          type="button"
-          disabled
-          title="PDF export coming soon"
-          className="rounded-full border border-[#3c4043] px-4 py-1.5 text-xs font-semibold text-[#9aa0a6] opacity-60"
-        >
+        <button type="button" disabled title="PDF export coming soon" className={cn(btnSecondary, btnSm, 'opacity-50')}>
           Export PDF note
         </button>
-        {loading ? <span className="text-[10px] text-[#9aa0a6]">Refreshing…</span> : null}
       </div>
 
       {traceOpen ? (
-        <div className="border-t border-[#3c4043] bg-[#292a2d] px-4 py-3 text-[11px] leading-relaxed text-[#e8eaed]">
-          <p className="font-semibold text-[#fbbc04]">Step trace (brief financial engine)</p>
-          <ol className="mt-2 list-decimal space-y-1 pl-5 text-[#9aa0a6]">
+        <div className="rounded-sm border border-kenya-line bg-[#e8eef8] px-4 py-3 text-xs leading-relaxed text-kenya-navy dark:bg-[#25282c] dark:text-[#e8eaed]">
+          <p className="font-semibold">Step trace (brief financial engine)</p>
+          <ol className="mt-2 list-decimal space-y-1 pl-5 text-kenya-muted dark:text-[#bdc1c6]">
             <li>Per building: hazard tier → depth → JRC damage ratio × TIV = ground-up loss.</li>
             <li>Policy: gross = max(0, GUL − TIV × deductible {formatPct.format(settings?.deductible_pct ?? 0.05)}).</li>
-            <li>Portfolio scenario: sum all buildings at tier {ops.tier_name} (1 in {ops.engine_tier_return_period_years}).</li>
+            <li>
+              Portfolio scenario: sum all buildings at tier {ops.tier_name} (1 in {ops.engine_tier_return_period_years}).
+            </li>
             <li>Annual view: ELT points use tier AEP × portfolio gross; AAL = Σ AEP × loss.</li>
-            <li>Zones: nearest county hotspot within 3 km, else &quot;Outside hotspot radius&quot;.</li>
+            <li>
+              Zones: CSV <code className="font-mono">zone</code> column if present; else Nairobi hotspots for Nairobi
+              books; else portfolio north/south/east/west sectors for other regions.
+            </li>
             <li>Reinsurance net is out of scope — figures are insurer gross.</li>
           </ol>
         </div>

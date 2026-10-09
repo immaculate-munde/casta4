@@ -23,6 +23,7 @@ import {
 } from './lib/nairobi-flood-cat.js';
 import { loadExternalEpCurve } from './lib/ep-curve-model.js';
 import { loadUploadedDocTexts, readCatSettings, readManifest } from './lib/workspace-store.js';
+import { buildCatSimulationOptions } from './lib/cat-sim-context.js';
 
 function epLossAtOrAbove(external, minYears) {
   const curve = external?.ep_curve;
@@ -347,43 +348,44 @@ app.get('/api/claims/summary', async (_req, res) => {
 // ── Operations financial desk (active workspace CSV + CAT engine) ─────────────
 app.get('/api/dashboard/operations', async (req, res) => {
   try {
-    const saved = await readCatSettings();
     const returnPeriod = Number(req.query.return_period) || 100;
     const riskLoadPct = Number(req.query.risk_load_pct);
     const deductibleRaw = req.query.deductible_pct;
     const useAiRaw = req.query.use_ai_rectifier;
 
-    const simOpts = {
+    const simOpts = await buildCatSimulationOptions({
       operations_return_period: returnPeriod,
       risk_load_pct: Number.isFinite(riskLoadPct) ? riskLoadPct : 35,
-      deductible_pct:
-        deductibleRaw != null && deductibleRaw !== '' ? Number(deductibleRaw) : saved.deductible_pct,
-      use_ai_rectifier:
-        useAiRaw === '0' || useAiRaw === 'false'
-          ? false
-          : useAiRaw === '1' || useAiRaw === 'true'
-            ? true
-            : saved.use_ai_rectifier,
-      influence_km: saved.influence_km,
-      reinsurance_qs_pct: saved.reinsurance_qs_pct,
-    };
+      ...(deductibleRaw != null && deductibleRaw !== ''
+        ? { deductible_pct: Number(deductibleRaw) }
+        : {}),
+      ...(useAiRaw === '0' || useAiRaw === 'false'
+        ? { use_ai_rectifier: false }
+        : useAiRaw === '1' || useAiRaw === 'true'
+          ? { use_ai_rectifier: true }
+          : {}),
+    });
 
     if (!catModelConfigured() || !(await catEngineHealthy())) {
       const { exposure, manifest } = await loadPortfolio();
       const summary = computePortfolioSummary(exposure);
       return res.status(503).json({
         cat_engine_loaded: false,
-        error: 'CAT engine unavailable — start nairobi-flood-cat on port 8000',
-        region_label: manifest?.region_label || 'Portfolio',
+        error: 'CAT engine unavailable — start the portfolio CAT service (uvicorn server:app)',
+        region_label: manifest?.region_label || simOpts.region_label || 'Portfolio',
+        region_id: simOpts.region_id,
         portfolio: summary,
       });
     }
 
-    const [cat, manifest] = await Promise.all([runCatSimulation(simOpts), readManifest()]);
+    const cat = await runCatSimulation(simOpts);
+    const ops = cat.operations ?? null;
     res.json({
       cat_engine_loaded: true,
-      region_label: manifest?.region_label || manifest?.region_id || 'Portfolio',
-      region_id: manifest?.region_id || null,
+      exposure_source: 'active_workspace_csv',
+      region_label: ops?.region_label || simOpts.region_label || 'Portfolio',
+      region_id: ops?.region_id || simOpts.region_id,
+      zone_mode: ops?.zone_mode ?? null,
       use_ai_rectifier: cat.use_ai_rectifier,
       hotspot_assets: cat.hotspot_assets,
       portfolio_count: cat.portfolio_count,
@@ -392,7 +394,7 @@ app.get('/api/dashboard/operations', async (req, res) => {
         use_ai_rectifier: simOpts.use_ai_rectifier,
         influence_km: simOpts.influence_km,
       },
-      operations: cat.operations ?? null,
+      operations: ops,
     });
   } catch (err) {
     console.error('Operations desk error:', err);
@@ -439,7 +441,7 @@ app.get('/api/dashboard', async (_req, res) => {
     let cat = null;
     if (catModelConfigured() && (await catEngineHealthy())) {
       try {
-        cat = await runCatSimulation({ operations_return_period: 100, risk_load_pct: 35 });
+        cat = await runCatSimulation(await buildCatSimulationOptions());
         const s100 = cat.summary_100yr;
         if (s100?.gross_loss_kes != null) {
           moderate_loss_kes = moderate_loss_kes ?? epLossAtOrAbove({ ep_curve: cat.ep_curve_gross }, 10);

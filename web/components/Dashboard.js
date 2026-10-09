@@ -73,9 +73,9 @@ export default function Dashboard({ embedded = false }) {
       <div className="mx-auto max-w-7xl px-3 py-4 sm:px-6 sm:py-6">
         <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h1 className="font-serif text-3xl font-semibold tracking-tight text-kenya-navy">Operations Dashboard</h1>
+            <h1 className="font-serif text-3xl font-semibold tracking-tight text-kenya-navy">Operations</h1>
             <p className="mt-1 text-kenya-muted">
-              Active map book drives the financial engine below · claims desk further down
+              ReAgent financial engine follows the active map CSV (any region) · claims desk below
             </p>
           </div>
           <div className="flex items-center gap-2 rounded-full border border-kenya-line bg-kenya-panel px-3 py-1 text-xs font-semibold text-kenya-green">

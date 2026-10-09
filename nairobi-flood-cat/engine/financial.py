@@ -64,6 +64,11 @@ def prepare_portfolio(df: pd.DataFrame) -> pd.DataFrame:
     else:
         out["has_basement"] = out["has_basement"].astype(bool)
 
+    if "zone" in out.columns:
+        out["zone"] = out["zone"].astype(str).str.strip()
+    elif "area" in out.columns:
+        out["zone"] = out["area"].astype(str).str.strip()
+
     for tier, aliases in HAZARD_COL_ALIASES.items():
         for alias in aliases:
             if alias in out.columns:

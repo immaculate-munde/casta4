@@ -96,7 +96,7 @@ export default function AppShell({ children }) {
           <span className="inline-block h-[22px] w-2.5 shrink-0 bg-kenya-coral" aria-hidden />
           <span className="truncate font-serif text-lg font-semibold text-kenya-navy sm:text-xl">Kenya Re</span>
         </Link>
-        <span className="hidden text-xs text-kenya-muted sm:inline">Casta4 workspace</span>
+        <span className="hidden text-xs text-kenya-muted sm:inline">ReAgent workspace</span>
         <div className="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2">
           <ThemeToggle compact />
           <SignOutButton className={`${btnBase} !px-2.5 !py-1.5 text-xs sm:!px-4`} />

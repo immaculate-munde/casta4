@@ -45,6 +45,9 @@ class SimulateBody(BaseModel):
     influence_km: float = Field(1.2, ge=0.2, le=5)
     operations_return_period: int = Field(100, ge=2, le=500)
     risk_load_pct: float = Field(35.0, ge=0, le=100)
+    region_id: str = "custom"
+    region_label: str = "Portfolio"
+    use_hotspot_zones: bool = False
 
 
 def _elt_to_ep_points(elt: pd.DataFrame, loss_key: str) -> list[dict[str, Any]]:
@@ -158,6 +161,7 @@ def simulate(body: SimulateBody):
     ep_base = _elt_to_ep_points(res_base, "gross_loss_m")
     ep_ai = _elt_to_ep_points(res_ai, "gross_loss_m")
 
+    use_hotspots = bool(body.use_hotspot_zones) or str(body.region_id).lower() == "nairobi"
     operations = build_operations_view(
         current_detail,
         current,
@@ -168,6 +172,9 @@ def simulate(body: SimulateBody):
         ep_curve_gross=ep_gross,
         ep_curve_baseline_gross=ep_base,
         ep_curve_ai_gross=ep_ai,
+        use_hotspot_zones=use_hotspots,
+        region_label=body.region_label,
+        region_id=body.region_id,
     )
 
     return {

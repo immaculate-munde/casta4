@@ -62,6 +62,7 @@ export default function ExposureCsvUpload({ onSuccess, compact = false }) {
         setGeneratedEpUrl(data.generated_ep_csv_url || '');
         setMsg(generatedText);
         setBookRev((v) => v + 1);
+        window.dispatchEvent(new CustomEvent('reagent:exposure-changed'));
         window.dispatchEvent(new CustomEvent('casta4:exposure-changed'));
         onSuccess?.(data);
         return;
@@ -83,6 +84,7 @@ export default function ExposureCsvUpload({ onSuccess, compact = false }) {
             : `Uploaded ${file.name} for document parsing and exposure mapping.`
         );
         setBookRev((v) => v + 1);
+        window.dispatchEvent(new CustomEvent('reagent:exposure-changed'));
         window.dispatchEvent(new CustomEvent('casta4:exposure-changed'));
         onSuccess?.(data.exposure || data);
         return;

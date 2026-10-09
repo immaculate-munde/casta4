@@ -45,6 +45,42 @@ def _housing_label(row: pd.Series) -> str:
     return HOUSING_LABELS.get(ctype, ctype)
 
 
+def _portfolio_sector_zone(lat: float, lon: float, lat_mid: float, lon_mid: float, region_label: str) -> str:
+    ns = "North" if float(lat) >= lat_mid else "South"
+    ew = "East" if float(lon) >= lon_mid else "West"
+    base = (region_label or "Portfolio").strip()
+    return f"{base} · {ns}-{ew}"
+
+
+def _zone_series(
+    detailed_df: pd.DataFrame,
+    rectifier: DrainageAIRectifier,
+    *,
+    use_hotspot_zones: bool,
+    region_label: str,
+) -> pd.Series:
+    if "zone" in detailed_df.columns and detailed_df["zone"].notna().any():
+        return detailed_df["zone"].fillna("Unassigned").astype(str)
+
+    lat_col = "latitude" if "latitude" in detailed_df.columns else "lat"
+    lon_col = "longitude" if "longitude" in detailed_df.columns else "lon"
+    lats = detailed_df[lat_col].astype(float)
+    lons = detailed_df[lon_col].astype(float)
+    lat_mid = float(lats.median())
+    lon_mid = float(lons.median())
+
+    if use_hotspot_zones:
+        return detailed_df.apply(
+            lambda r: _nearest_hotspot_name(rectifier, float(r[lat_col]), float(r[lon_col])),
+            axis=1,
+        )
+
+    return detailed_df.apply(
+        lambda r: _portfolio_sector_zone(float(r[lat_col]), float(r[lon_col]), lat_mid, lon_mid, region_label),
+        axis=1,
+    )
+
+
 def _nearest_hotspot_name(
     rectifier: DrainageAIRectifier,
     lat: float,
@@ -73,6 +109,9 @@ def build_operations_view(
     ep_curve_gross: list[dict[str, Any]] | None = None,
     ep_curve_baseline_gross: list[dict[str, Any]] | None = None,
     ep_curve_ai_gross: list[dict[str, Any]] | None = None,
+    use_hotspot_zones: bool = False,
+    region_label: str = "Portfolio",
+    region_id: str = "custom",
 ) -> dict[str, Any]:
     tier_name = _tier_name_for_return_period(return_period_years)
     tier_rp = next(
@@ -123,11 +162,18 @@ def build_operations_view(
             band_low.append({"return_period_years": p["return_period_years"], "loss_kes": p["loss_kes"] * 0.85})
             band_high.append({"return_period_years": p["return_period_years"], "loss_kes": p["loss_kes"] * 1.15})
 
+    zones = _zone_series(
+        detailed_df,
+        rectifier,
+        use_hotspot_zones=use_hotspot_zones,
+        region_label=region_label,
+    )
+
     # Per-location rows for tables / export
     loc_rows: list[dict[str, Any]] = []
     for idx, r in detailed_df.iterrows():
         hc = str(r.get("housing_class", r.get("construction_type", ""))).strip()
-        zone = _nearest_hotspot_name(rectifier, float(r[lat_col]), float(r[lon_col]))
+        zone = str(zones.loc[idx])
         loc_rows.append(
             {
                 "loc_id": str(r.get("loc_id", idx)),
@@ -226,4 +272,9 @@ def build_operations_view(
         },
         "location_losses": loc_rows,
         "total_tiv_kes": total_tiv,
+        "region_id": region_id,
+        "region_label": region_label,
+        "zone_mode": "csv_column"
+        if "zone" in detailed_df.columns
+        else ("nairobi_hotspots" if use_hotspot_zones else "portfolio_sectors"),
     }
