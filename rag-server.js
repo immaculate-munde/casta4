@@ -22,7 +22,7 @@ import {
   computeLossCurve,
 } from './lib/nairobi-flood-cat.js';
 import { loadExternalEpCurve } from './lib/ep-curve-model.js';
-import { loadUploadedDocTexts } from './lib/workspace-store.js';
+import { loadUploadedDocTexts, readCatSettings, readManifest } from './lib/workspace-store.js';
 
 function epLossAtOrAbove(external, minYears) {
   const curve = external?.ep_curve;
@@ -344,6 +344,62 @@ app.get('/api/claims/summary', async (_req, res) => {
   }
 });
 
+// ── Operations financial desk (active workspace CSV + CAT engine) ─────────────
+app.get('/api/dashboard/operations', async (req, res) => {
+  try {
+    const saved = await readCatSettings();
+    const returnPeriod = Number(req.query.return_period) || 100;
+    const riskLoadPct = Number(req.query.risk_load_pct);
+    const deductibleRaw = req.query.deductible_pct;
+    const useAiRaw = req.query.use_ai_rectifier;
+
+    const simOpts = {
+      operations_return_period: returnPeriod,
+      risk_load_pct: Number.isFinite(riskLoadPct) ? riskLoadPct : 35,
+      deductible_pct:
+        deductibleRaw != null && deductibleRaw !== '' ? Number(deductibleRaw) : saved.deductible_pct,
+      use_ai_rectifier:
+        useAiRaw === '0' || useAiRaw === 'false'
+          ? false
+          : useAiRaw === '1' || useAiRaw === 'true'
+            ? true
+            : saved.use_ai_rectifier,
+      influence_km: saved.influence_km,
+      reinsurance_qs_pct: saved.reinsurance_qs_pct,
+    };
+
+    if (!catModelConfigured() || !(await catEngineHealthy())) {
+      const { exposure, manifest } = await loadPortfolio();
+      const summary = computePortfolioSummary(exposure);
+      return res.status(503).json({
+        cat_engine_loaded: false,
+        error: 'CAT engine unavailable — start nairobi-flood-cat on port 8000',
+        region_label: manifest?.region_label || 'Portfolio',
+        portfolio: summary,
+      });
+    }
+
+    const [cat, manifest] = await Promise.all([runCatSimulation(simOpts), readManifest()]);
+    res.json({
+      cat_engine_loaded: true,
+      region_label: manifest?.region_label || manifest?.region_id || 'Portfolio',
+      region_id: manifest?.region_id || null,
+      use_ai_rectifier: cat.use_ai_rectifier,
+      hotspot_assets: cat.hotspot_assets,
+      portfolio_count: cat.portfolio_count,
+      cat_settings: {
+        deductible_pct: simOpts.deductible_pct,
+        use_ai_rectifier: simOpts.use_ai_rectifier,
+        influence_km: simOpts.influence_km,
+      },
+      operations: cat.operations ?? null,
+    });
+  } catch (err) {
+    console.error('Operations desk error:', err);
+    res.status(500).json({ error: 'Failed to load operations desk', details: err.message });
+  }
+});
+
 // ── Combined dashboard endpoint ───────────────────────────────────────────────
 app.get('/api/dashboard', async (_req, res) => {
   try {
@@ -383,7 +439,7 @@ app.get('/api/dashboard', async (_req, res) => {
     let cat = null;
     if (catModelConfigured() && (await catEngineHealthy())) {
       try {
-        cat = await runCatSimulation();
+        cat = await runCatSimulation({ operations_return_period: 100, risk_load_pct: 35 });
         const s100 = cat.summary_100yr;
         if (s100?.gross_loss_kes != null) {
           moderate_loss_kes = moderate_loss_kes ?? epLossAtOrAbove({ ep_curve: cat.ep_curve_gross }, 10);
@@ -438,6 +494,7 @@ app.get('/api/dashboard', async (_req, res) => {
         cat_elt: cat?.elt ?? null,
         cat_ep_baseline: cat?.ep_curve_baseline_gross ?? null,
         cat_ep_ai: cat?.ep_curve_ai_gross ?? null,
+        cat_operations: cat?.operations ?? null,
         top_risk_locations: topRisk,
         by_housing: summary.by_housing,
       },

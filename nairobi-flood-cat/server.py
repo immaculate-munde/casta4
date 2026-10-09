@@ -19,6 +19,7 @@ from engine.financial import (
     run_portfolio_simulation,
     underwriting_recommendation,
 )
+from engine.operations import build_operations_view
 from engine.geo_sampler import list_available_rasters, sample_hazard_at_point
 from engine.hazard_ai import DrainageAIRectifier
 from engine.vulnerability import VULN_CONFIG, calculate_damage_ratio
@@ -42,6 +43,8 @@ class SimulateBody(BaseModel):
     deductible_pct: float = Field(0.05, ge=0, le=0.5)
     reinsurance_qs_pct: float = Field(0.25, ge=0, le=1)
     influence_km: float = Field(1.2, ge=0.2, le=5)
+    operations_return_period: int = Field(100, ge=2, le=500)
+    risk_load_pct: float = Field(35.0, ge=0, le=100)
 
 
 def _elt_to_ep_points(elt: pd.DataFrame, loss_key: str) -> list[dict[str, Any]]:
@@ -151,6 +154,22 @@ def simulate(body: SimulateBody):
     if base_100 and ai_100 and base_100["gross_loss_kes"] > 0:
         uplift_pct = (ai_100["gross_loss_kes"] - base_100["gross_loss_kes"]) / base_100["gross_loss_kes"] * 100
 
+    ep_gross = _elt_to_ep_points(current, "gross_loss_m")
+    ep_base = _elt_to_ep_points(res_base, "gross_loss_m")
+    ep_ai = _elt_to_ep_points(res_ai, "gross_loss_m")
+
+    operations = build_operations_view(
+        current_detail,
+        current,
+        rectifier,
+        return_period_years=body.operations_return_period,
+        deductible_pct=body.deductible_pct,
+        risk_load_pct=body.risk_load_pct,
+        ep_curve_gross=ep_gross,
+        ep_curve_baseline_gross=ep_base,
+        ep_curve_ai_gross=ep_ai,
+    )
+
     return {
         "source": "linus_cat_engine",
         "use_ai_rectifier": body.use_ai_rectifier,
@@ -163,11 +182,12 @@ def simulate(body: SimulateBody):
         "elt": current.to_dict(orient="records"),
         "elt_baseline": res_base.to_dict(orient="records"),
         "elt_ai": res_ai.to_dict(orient="records"),
-        "ep_curve_gross": _elt_to_ep_points(current, "gross_loss_m"),
+        "ep_curve_gross": ep_gross,
         "ep_curve_net": _elt_to_ep_points(current, "net_loss_m"),
-        "ep_curve_baseline_gross": _elt_to_ep_points(res_base, "gross_loss_m"),
-        "ep_curve_ai_gross": _elt_to_ep_points(res_ai, "gross_loss_m"),
+        "ep_curve_baseline_gross": ep_base,
+        "ep_curve_ai_gross": ep_ai,
         "locations": _detail_by_loc(current_detail),
+        "operations": operations,
     }
 
 

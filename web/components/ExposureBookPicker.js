@@ -35,6 +35,7 @@ export default function ExposureBookPicker({ onActivated, compact = false, refre
       await postRagJson(`/api/workspace/exposure-snapshots/${encodeURIComponent(selected)}/activate`, {});
       setActiveId(selected);
       onActivated?.();
+      window.dispatchEvent(new CustomEvent('casta4:exposure-changed'));
       await load();
     } catch (e) {
       setErr(e.message);

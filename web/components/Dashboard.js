@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import SignOutButton from '@/components/SignOutButton';
 import ThemeToggle from '@/components/ThemeToggle';
 import EventLossTable from '@/components/EventLossTable';
+import OperationsFinancialDesk from '@/components/OperationsFinancialDesk';
 import { useWorkspaceFormat } from '@/components/WorkspaceFormatProvider';
 import { fetchRagJson } from '@/lib/api';
 
@@ -74,7 +75,7 @@ export default function Dashboard({ embedded = false }) {
           <div>
             <h1 className="font-serif text-3xl font-semibold tracking-tight text-kenya-navy">Operations Dashboard</h1>
             <p className="mt-1 text-kenya-muted">
-              Kenya Re · Reinsurance claims & catastrophe risk · Synthetic data
+              Active map book drives the financial engine below · claims desk further down
             </p>
           </div>
           <div className="flex items-center gap-2 rounded-full border border-kenya-line bg-kenya-panel px-3 py-1 text-xs font-semibold text-kenya-green">
@@ -91,6 +92,8 @@ export default function Dashboard({ embedded = false }) {
             <small className="opacity-80">{error}</small>
           </div>
         ) : null}
+
+        <OperationsFinancialDesk />
 
         <section className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
           {[
