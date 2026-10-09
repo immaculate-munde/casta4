@@ -105,7 +105,7 @@ Use the blueprint: **`render.yaml`** (three web services: `casta4-web`, `casta4-
 
 **Wired by blueprint:** `CAT_MODEL_URL` (api → cat), `RAG_SERVER_URL` and `NEXT_PUBLIC_RAG_API_URL` (web → api), `GROQ_MODEL`, `GROQ_MAX_TOKENS`, `NODE_ENV`.
 
-Optional for **persistent uploads** on the API service: attach a disk and set `WORKSPACE_ROOT` to the mount path (default workspace is ephemeral on Render).
+**Persistent uploads on Render:** set **`SUPABASE_URL`** + **`SUPABASE_SERVICE_ROLE_KEY`** on **casta4-api** and **casta4-web** — see **`docs/RENDER_ENV.md`** and **`docs/SUPABASE.md`**. Fallback: attach a disk and set **`WORKSPACE_ROOT`** on the API.
 
 Details: [Render docs](https://render.com/docs) · `web/.env.example`
 
@@ -158,7 +158,10 @@ See `data/REGIONS_README.txt`. Upload on **Map** with a **region label**; curren
 | `CAT_MODEL_URL` | API | Python CAT base URL |
 | `RAG_SERVER_URL` | Web (build/runtime) | Next rewrite target |
 | `NEXT_PUBLIC_RAG_API_URL` | Web | Server-side API base |
-| `WORKSPACE_ROOT` | API | Optional persistent workspace path |
+| `SUPABASE_URL` | API | Postgres workspace storage (with service role key) |
+| `SUPABASE_SERVICE_ROLE_KEY` | API | Server-only; never expose to browser |
+| `CASTA4_WORKSPACE_ID` | API | Workspace row id (default `default`) |
+| `WORKSPACE_ROOT` | API | Filesystem workspace when Supabase not set |
 | `CAT_DATA_DIR`, `CAT_*` | API/CAT | Optional; override bundled Nairobi data paths |
 
 Do **not** commit `.env` files with secrets.

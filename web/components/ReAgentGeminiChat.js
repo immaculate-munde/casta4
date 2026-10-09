@@ -6,36 +6,85 @@ import ThemeToggle from '@/components/ThemeToggle';
 import { useChatDrawer } from '@/components/ChatDrawerProvider';
 import { askClaims } from '@/lib/api';
 import { pickChatGreeting } from '@/lib/chat-greetings';
+import { titleFromFirstMessage } from '@/lib/chat-titles';
 import { enrichQuestionWithProperty } from '@/lib/property-context';
 import { useUserSession } from '@/lib/use-user-session';
 import ChatDocumentUpload from '@/components/ChatDocumentUpload';
 import { IconPanelLeft } from '@/components/NavIcons';
 import { btnBase, btnPrimary, cn } from '@/lib/buttons';
 
-const STORAGE_KEY = 'reagent_chat_sessions_v1';
+const STORAGE_KEY_PREFIX = 'reagent_chat_sessions_v2';
 
-function loadSessions() {
+function storageKey(email) {
+  return email ? `${STORAGE_KEY_PREFIX}_${email}` : `${STORAGE_KEY_PREFIX}_anonymous`;
+}
+
+function loadSessionsLocal(email) {
   if (typeof window === 'undefined') return [];
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(storageKey(email));
     return raw ? JSON.parse(raw) : [];
   } catch {
     return [];
   }
 }
 
-function saveSessions(sessions) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions.slice(0, 24)));
+function saveSessionsLocal(email, sessions) {
+  localStorage.setItem(storageKey(email), JSON.stringify(sessions.slice(0, 24)));
 }
 
-function newSession() {
+function newSession(partial = {}) {
+  const id = crypto.randomUUID();
   return {
-    id: crypto.randomUUID(),
-    greetingSeed: crypto.randomUUID(),
-    title: 'New chat',
+    id,
+    greetingSeed: partial.greetingSeed || crypto.randomUUID(),
+    title: partial.title || 'New chat',
+    contextType: partial.contextType || null,
+    contextMeta: partial.contextMeta || null,
     updatedAt: Date.now(),
-    messages: [],
+    messages: partial.messages || [],
   };
+}
+
+async function fetchRemoteSessions() {
+  const res = await fetch('/api/chat/sessions');
+  if (res.status === 401) return { sessions: null, persistence: 'local' };
+  if (!res.ok) throw new Error('Could not load chats');
+  return res.json();
+}
+
+async function persistSessionRemote(session) {
+  const res = await fetch(`/api/chat/sessions/${session.id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      title: session.title,
+      messages: session.messages,
+      contextType: session.contextType,
+      contextMeta: session.contextMeta,
+    }),
+  });
+  if (res.status === 401) return;
+  if (!res.ok) throw new Error('Could not save chat');
+}
+
+async function createSessionRemote(session) {
+  const res = await fetch('/api/chat/sessions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      id: session.id,
+      title: session.title,
+      contextType: session.contextType,
+      contextMeta: session.contextMeta,
+      messages: session.messages,
+      greetingSeed: session.greetingSeed,
+    }),
+  });
+  if (res.status === 401) return null;
+  if (!res.ok) throw new Error('Could not create chat');
+  const data = await res.json();
+  return data.session;
 }
 
 function SourcePills({ sources }) {
@@ -60,14 +109,23 @@ function SourcePills({ sources }) {
 }
 
 export default function ReAgentGeminiChat({ onClose, fullscreen, onToggleFullscreen, embedded = false }) {
-  const { propertyContext, pendingPrompt, setPendingPrompt } = useChatDrawer();
+  const {
+    propertyContext,
+    pendingPrompt,
+    setPendingPrompt,
+    newThreadRequest,
+    clearNewThreadRequest,
+  } = useChatDrawer();
   const { user } = useUserSession();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sessions, setSessions] = useState([]);
   const [activeId, setActiveId] = useState(null);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [chatPersistence, setChatPersistence] = useState('local');
   const endRef = useRef(null);
+  const saveTimerRef = useRef(null);
+  const userEmail = user?.email?.toLowerCase() || null;
 
   const active = sessions.find((s) => s.id === activeId) || sessions[0];
 
@@ -86,16 +144,38 @@ export default function ReAgentGeminiChat({ onClose, fullscreen, onToggleFullscr
   }, [embedded]);
 
   useEffect(() => {
-    const loaded = loadSessions();
-    if (loaded.length) {
-      setSessions(loaded);
-      setActiveId(loaded[0].id);
-    } else {
-      const s = newSession();
-      setSessions([s]);
-      setActiveId(s.id);
-    }
-  }, []);
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const remote = await fetchRemoteSessions();
+        if (cancelled) return;
+        setChatPersistence(remote.persistence || 'local');
+        if (remote.sessions?.length) {
+          setSessions(remote.sessions);
+          setActiveId(remote.sessions[0].id);
+          saveSessionsLocal(userEmail, remote.sessions);
+          return;
+        }
+      } catch {
+        /* fall back to local */
+      }
+
+      const loaded = loadSessionsLocal(userEmail);
+      if (loaded.length) {
+        setSessions(loaded);
+        setActiveId(loaded[0].id);
+      } else {
+        const s = newSession();
+        setSessions([s]);
+        setActiveId(s.id);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [userEmail]);
 
   useEffect(() => {
     if (!pendingPrompt) return;
@@ -104,8 +184,21 @@ export default function ReAgentGeminiChat({ onClose, fullscreen, onToggleFullscr
   }, [pendingPrompt, setPendingPrompt]);
 
   useEffect(() => {
-    if (sessions.length) saveSessions(sessions);
-  }, [sessions]);
+    if (!sessions.length) return;
+    saveSessionsLocal(userEmail, sessions);
+    if (!userEmail || chatPersistence !== 'supabase') return;
+
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => {
+      const activeSession = sessions.find((s) => s.id === activeId) || sessions[0];
+      if (activeSession) {
+        persistSessionRemote(activeSession).catch(() => {});
+      }
+    }, 600);
+    return () => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    };
+  }, [sessions, activeId, userEmail, chatPersistence]);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -127,46 +220,98 @@ export default function ReAgentGeminiChat({ onClose, fullscreen, onToggleFullscr
     const s = newSession();
     setSessions((prev) => [s, ...prev]);
     setActiveId(s.id);
+    if (userEmail) {
+      createSessionRemote(s).catch(() => {});
+    }
     closeSidebarOnMobile();
   }
+
+  const threadPropertyContext = active?.contextMeta || propertyContext;
+
+  const sendUserMessage = useCallback(
+    async (sessionId, text, contextMeta, seedSession = null) => {
+      if (!text || loading) return;
+      const session = seedSession || sessions.find((s) => s.id === sessionId);
+      if (!session) return;
+
+      const userMsg = { role: 'user', text };
+      const nextMessages = [...session.messages, userMsg];
+      const title =
+        session.title === 'New chat' || !session.title?.trim()
+          ? titleFromFirstMessage(text)
+          : session.title;
+
+      updateSession(sessionId, () => ({
+        title,
+        messages: nextMessages,
+      }));
+
+      setLoading(true);
+      try {
+        const ctx = contextMeta || session.contextMeta || propertyContext;
+        const question = enrichQuestionWithProperty(text, ctx);
+        const { answer, sources } = await askClaims(question);
+        updateSession(sessionId, (s) => ({
+          messages: [...s.messages, { role: 'bot', text: answer, sources }],
+        }));
+      } catch (err) {
+        updateSession(sessionId, (s) => ({
+          messages: [
+            ...s.messages,
+            {
+              role: 'bot',
+              text: `Could not reach RAG API (${err.message}). Start node rag-server.js on port 3001.`,
+              sources: [],
+            },
+          ],
+        }));
+      } finally {
+        setLoading(false);
+      }
+    },
+    [loading, propertyContext, sessions, updateSession]
+  );
 
   async function onSubmit(e) {
     e.preventDefault();
     const text = input.trim();
     if (!text || loading || !active) return;
     setInput('');
-
-    const userMsg = { role: 'user', text };
-    const nextMessages = [...active.messages, userMsg];
-    const title = active.title === 'New chat' ? text.slice(0, 42) : active.title;
-
-    updateSession(active.id, () => ({
-      title,
-      messages: nextMessages,
-    }));
-
-    setLoading(true);
-    try {
-      const question = enrichQuestionWithProperty(text, propertyContext);
-      const { answer, sources } = await askClaims(question);
-      updateSession(active.id, (s) => ({
-        messages: [...s.messages, { role: 'bot', text: answer, sources }],
-      }));
-    } catch (err) {
-      updateSession(active.id, (s) => ({
-        messages: [
-          ...s.messages,
-          {
-            role: 'bot',
-            text: `Could not reach RAG API (${err.message}). Start node rag-server.js on port 3001.`,
-            sources: [],
-          },
-        ],
-      }));
-    } finally {
-      setLoading(false);
-    }
+    await sendUserMessage(active.id, text, threadPropertyContext);
   }
+
+  useEffect(() => {
+    if (!newThreadRequest) return;
+
+    const run = async () => {
+      const s = newSession({
+        title: newThreadRequest.title || 'New chat',
+        contextType: newThreadRequest.contextType || null,
+        contextMeta: newThreadRequest.propertyContext || newThreadRequest.contextMeta || null,
+      });
+      if (userEmail) {
+        try {
+          await createSessionRemote(s);
+          setChatPersistence('supabase');
+        } catch {
+          /* local still works */
+        }
+      }
+      setSessions((prev) => [s, ...prev].slice(0, 24));
+      setActiveId(s.id);
+      const prompt = newThreadRequest.prompt || '';
+      if (newThreadRequest.autoSend && prompt.trim()) {
+        await sendUserMessage(s.id, prompt.trim(), s.contextMeta, s);
+      } else if (prompt) {
+        setInput(prompt);
+      }
+      clearNewThreadRequest();
+      closeSidebarOnMobile();
+    };
+
+    run();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one-shot per nonce
+  }, [newThreadRequest?._nonce]);
 
   const hasThread = (active?.messages?.length || 0) > 0;
 
@@ -247,7 +392,9 @@ export default function ReAgentGeminiChat({ onClose, fullscreen, onToggleFullscr
         </div>
         <ChatDocumentUpload />
         <p className="px-4 pb-4 pt-1 text-[11px] leading-snug" style={{ color: 'var(--chat-text-muted)' }}>
-          Answers use policy, treaty & claim docs plus your uploads.
+          {chatPersistence === 'supabase' && userEmail
+            ? `Chats saved for ${userEmail} (syncs across devices).`
+            : 'Chats saved in this browser. Sign in + Supabase on web for sync.'}
         </p>
       </aside>
 
@@ -355,7 +502,7 @@ export default function ReAgentGeminiChat({ onClose, fullscreen, onToggleFullscr
           className="shrink-0 px-3 pb-4 pt-2 sm:px-4 sm:pb-5"
           style={{ background: 'var(--chat-bg)' }}
         >
-          {propertyContext?.loc_id ? (
+          {threadPropertyContext?.loc_id ? (
             <p
               className="mx-auto mb-2 max-w-3xl rounded-lg px-3 py-2 text-[11px] font-medium"
               style={{
@@ -363,11 +510,18 @@ export default function ReAgentGeminiChat({ onClose, fullscreen, onToggleFullscr
                 color: 'var(--chat-text-muted)',
               }}
             >
-              Map context: <strong style={{ color: 'var(--chat-text)' }}>{propertyContext.loc_id}</strong>
+              Map context: <strong style={{ color: 'var(--chat-text)' }}>{threadPropertyContext.loc_id}</strong>
               {' · '}
-              {propertyContext.cedant_name}
+              {threadPropertyContext.cedant_name}
               {' · '}
-              {propertyContext.kenya_re_in_book ? 'Kenya Re book' : 'Not in treaty book'}
+              {threadPropertyContext.kenya_re_in_book ? 'Kenya Re book' : 'Not in treaty book'}
+            </p>
+          ) : active?.contextType === 'ep_curve' ? (
+            <p
+              className="mx-auto mb-2 max-w-3xl rounded-lg px-3 py-2 text-[11px] font-medium"
+              style={{ background: 'var(--chat-user-bubble)', color: 'var(--chat-text-muted)' }}
+            >
+              Thread context: <strong style={{ color: 'var(--chat-text)' }}>EP curve &amp; return periods</strong>
             </p>
           ) : null}
           <div

@@ -3,6 +3,7 @@
 import { useId, useState } from 'react';
 import { IconUpload } from '@/components/NavIcons';
 import { fetchRagJson, postRagJson } from '@/lib/api';
+import ExposureBookPicker from '@/components/ExposureBookPicker';
 import { btnBase, btnPrimary, btnSm, cn } from '@/lib/buttons';
 
 function readFileAsUploadPayload(file) {
@@ -36,6 +37,7 @@ export default function ExposureCsvUpload({ onSuccess, compact = false }) {
   const [err, setErr] = useState('');
   const [regionLabel, setRegionLabel] = useState('');
   const [generatedEpUrl, setGeneratedEpUrl] = useState('');
+  const [bookRev, setBookRev] = useState(0);
 
   async function handleFile(file) {
     if (!file) return;
@@ -59,6 +61,7 @@ export default function ExposureCsvUpload({ onSuccess, compact = false }) {
           : `Uploaded ${data.manifest?.exposure_rows ?? ''} locations. Map will refresh.`;
         setGeneratedEpUrl(data.generated_ep_csv_url || '');
         setMsg(generatedText);
+        setBookRev((v) => v + 1);
         onSuccess?.(data);
         return;
       }
@@ -78,6 +81,7 @@ export default function ExposureCsvUpload({ onSuccess, compact = false }) {
             ? `Mapped ${file.name} to a hazard exposure row. The CAT map and EP curve were refreshed.`
             : `Uploaded ${file.name} for document parsing and exposure mapping.`
         );
+        setBookRev((v) => v + 1);
         onSuccess?.(data.exposure || data);
         return;
       }
@@ -95,6 +99,14 @@ export default function ExposureCsvUpload({ onSuccess, compact = false }) {
       {!compact ? (
         <p className="text-[11px] font-semibold text-[#0f2d52] dark:text-[#e8eaed]">Portfolio exposure</p>
       ) : null}
+      <ExposureBookPicker
+        compact={compact}
+        refreshKey={bookRev}
+        onActivated={() => {
+          setBookRev((v) => v + 1);
+          onSuccess?.();
+        }}
+      />
       {!compact ? (
         <input
           type="text"

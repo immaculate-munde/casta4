@@ -11,12 +11,13 @@ import EventLossTable from '@/components/EventLossTable';
 import ModelEpUpload from '@/components/ModelEpUpload';
 import VulnerabilityChart from '@/components/VulnerabilityChart';
 import { fetchRagJson } from '@/lib/api';
+import { defaultEpCurveTitle } from '@/lib/chat-titles';
 import { btnBase, btnPrimary, cn } from '@/lib/buttons';
 
 const kes = new Intl.NumberFormat('en-KE', { style: 'currency', currency: 'KES', maximumFractionDigits: 0 });
 
 export default function EpCurvePage() {
-  const { openChatWithPrompt } = useChatDrawer();
+  const { openChatWithNewThread } = useChatDrawer();
   const [meta, setMeta] = useState(null);
   const [curve, setCurve] = useState(null);
   const [summary, setSummary] = useState(null);
@@ -160,7 +161,14 @@ export default function EpCurvePage() {
             <button
               type="button"
               className={cn(btnPrimary, 'normal-case')} 
-              onClick={() => openChatWithPrompt(curvePrompt())}
+              onClick={() =>
+                openChatWithNewThread({
+                  title: defaultEpCurveTitle(meta?.region_label),
+                  contextType: 'ep_curve',
+                  prompt: curvePrompt(),
+                  autoSend: true,
+                })
+              }
             >
               Explain this curve
             </button>
@@ -273,7 +281,14 @@ export default function EpCurvePage() {
             <button
               type="button"
               className={cn(btnBase, 'normal-case')}
-              onClick={() => openChatWithPrompt(curvePrompt())}
+              onClick={() =>
+                openChatWithNewThread({
+                  title: defaultEpCurveTitle(meta?.region_label),
+                  contextType: 'ep_curve',
+                  prompt: curvePrompt(),
+                  autoSend: true,
+                })
+              }
             >
               Explain this curve
             </button>

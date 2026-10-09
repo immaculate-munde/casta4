@@ -1,6 +1,8 @@
 # Casta4 on Render — two Web Services from one repo.
 # Dashboard: New → Blueprint → connect repo → apply this file.
-# Set GROQ_API_KEY on casta4-api when prompted (secret).
+# Manual secrets on casta4-api: GROQ_API_KEY, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY.
+# CASTA4_WORKSPACE_ID=default is set below (shared demo book in Supabase).
+# On casta4-web: SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY (chat sync only). See docs/RENDER_ENV.md.
 
 services:
   - type: web
@@ -26,6 +28,12 @@ services:
           type: web
           name: casta4-cat
           envVarKey: RENDER_EXTERNAL_URL
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: CASTA4_WORKSPACE_ID
+        value: default
 
   - type: web
     name: casta4-cat
@@ -59,3 +67,7 @@ services:
           type: web
           name: casta4-api
           envVarKey: RENDER_EXTERNAL_URL
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false

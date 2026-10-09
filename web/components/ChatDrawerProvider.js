@@ -16,16 +16,24 @@ export default function ChatDrawerProvider({ children }) {
   const [fullscreen, setFullscreen] = useState(false);
   const [propertyContext, setPropertyContext] = useState(null);
   const [pendingPrompt, setPendingPrompt] = useState('');
+  /** Opens drawer and creates a fresh thread (title, optional prompt, optional auto-send). */
+  const [newThreadRequest, setNewThreadRequest] = useState(null);
 
   const openChat = useCallback(() => setOpen(true), []);
   const openChatWithPrompt = useCallback((prompt = '') => {
     setPendingPrompt(prompt);
     setOpen(true);
   }, []);
+  const openChatWithNewThread = useCallback((options = {}) => {
+    setNewThreadRequest({ ...options, _nonce: Date.now() });
+    setOpen(true);
+  }, []);
+  const clearNewThreadRequest = useCallback(() => setNewThreadRequest(null), []);
   const closeChat = useCallback(() => {
     setOpen(false);
     setFullscreen(false);
     setPendingPrompt('');
+    setNewThreadRequest(null);
   }, []);
   const toggleFullscreen = useCallback(() => setFullscreen((v) => !v), []);
 
@@ -35,6 +43,9 @@ export default function ChatDrawerProvider({ children }) {
         open,
         openChat,
         openChatWithPrompt,
+        openChatWithNewThread,
+        newThreadRequest,
+        clearNewThreadRequest,
         closeChat,
         setOpen,
         fullscreen,

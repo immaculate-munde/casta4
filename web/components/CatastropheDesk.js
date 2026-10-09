@@ -10,6 +10,7 @@ import ThemeToggle from '@/components/ThemeToggle';
 import { useChatDrawer } from '@/components/ChatDrawerProvider';
 import { fetchRagJson, postRagJson, ragApiBase } from '@/lib/api';
 import { dr100Band, housingToConstruction } from '@/lib/housing';
+import { defaultEpCurveTitle, defaultPropertyTitle } from '@/lib/chat-titles';
 import { btnBase, btnMapOverlay, btnPrimary, btnSm, cn } from '@/lib/buttons';
 
 const hazardPctClass = {
@@ -108,7 +109,7 @@ export default function CatastropheDesk({ shellMode = false, onPortfolioChange }
   const [uwData, setUwData] = useState(null);
   const [uwLoading, setUwLoading] = useState(false);
   const [uwError, setUwError] = useState('');
-  const { setPropertyContext, openChat, openChatWithPrompt } = useChatDrawer();
+  const { setPropertyContext, openChatWithNewThread } = useChatDrawer();
 
   const epNote = lossCurve?.points?.find((p) => p.tier === activeTier);
 
@@ -866,7 +867,14 @@ export default function CatastropheDesk({ shellMode = false, onPortfolioChange }
             <button
               type="button"
               className={cn(btnPrimary, btnSm, 'mt-2 inline-flex w-full justify-center normal-case')}
-              onClick={() => openChatWithPrompt(curvePrompt())}
+              onClick={() =>
+                openChatWithNewThread({
+                  title: defaultEpCurveTitle(meta?.region_label),
+                  contextType: 'ep_curve',
+                  prompt: curvePrompt(),
+                  autoSend: true,
+                })
+              }
             >
               Explain this curve
             </button>
@@ -930,13 +938,39 @@ export default function CatastropheDesk({ shellMode = false, onPortfolioChange }
                     {detail.lat.toFixed(5)}, {detail.lon.toFixed(5)}
                   </p>
                   <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-                    <button type="button" className={cn(btnPrimary, 'w-full sm:w-auto')} onClick={openChat}>
-                      Ask ReAgent about this property →
+                    <button
+                      type="button"
+                      className={cn(btnPrimary, 'w-full sm:w-auto')}
+                      onClick={() =>
+                        openChatWithNewThread({
+                          title: defaultPropertyTitle(detail.loc_id),
+                          contextType: 'property',
+                          propertyContext: {
+                            loc_id: detail.loc_id,
+                            cedant_name: detail.cedant_name,
+                            kenya_re_in_book: detail.kenya_re_in_book,
+                            tiv_kes: detail.tiv_kes,
+                            lat: detail.lat,
+                            lon: detail.lon,
+                          },
+                          prompt: `Summarise flood underwriting considerations for ${detail.loc_id} (${detail.cedant_name}), TIV ${kes.format(detail.tiv_kes)}, and whether treaty referral may apply.`,
+                          autoSend: true,
+                        })
+                      }
+                    >
+                      Ask ReAgent about this property
                     </button>
                     <button
                       type="button"
                       className={cn(btnBase, 'w-full sm:w-auto')}
-                      onClick={() => openChatWithPrompt(curvePrompt())}
+                      onClick={() =>
+                        openChatWithNewThread({
+                          title: defaultEpCurveTitle(meta?.region_label),
+                          contextType: 'ep_curve',
+                          prompt: curvePrompt(),
+                          autoSend: true,
+                        })
+                      }
                     >
                       Explain this EP curve
                     </button>
